@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>분리수거 검사관</title>
+<link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════ 시작 화면 ══════════ -->
+  <section id="startScreen" class="screen">
+    <div class="start-card">
+      <div class="logo-stamp">
+        <svg viewBox="0 0 120 120" class="logo-mark" aria-hidden="true">
+          <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="7"/>
+          <circle cx="60" cy="60" r="42" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="4 5"/>
+          <path d="M60 30 a6 6 0 1 1 0.1 0 M43 76 l12 -22 l10 18 l7 -12 l11 20 z" fill="currentColor"/>
+          <path d="M36 52 l8 8 l-8 8 M84 52 l-8 8 l8 8" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1 class="game-title">분리수거<br/>검사관</h1>
+      <p class="game-tag">오늘도 우리 동네 재활용장은 평화로워야 한다</p>
+      <div id="daySelect" class="day-select"></div>
+      <div class="mode-select">
+        <button id="startHumanBtn" class="mode-card">
+          <span class="mode-emoji">🧑</span>
+          <span class="mode-title">내가 검사관</span>
+          <span class="mode-desc">직접 도장을 찍으며<br/>검사 규칙을 익혀요</span>
+        </button>
+        <button id="startAiBtn" class="mode-card">
+          <span class="mode-emoji">🤖</span>
+          <span class="mode-title">재활용이에게 맡기기</span>
+          <span class="mode-desc">신입 AI를 감독하고<br/>가르쳐서 키워요</span>
+        </button>
+      </div>
+      <div class="start-row">
+        <button id="notebookHomeBtn" class="notebook-btn static">📒 알바 수첩</button>
+        <span id="startRecords" class="start-records"></span>
+      </div>
+      <button id="resetBtn" class="reset-link">🔄 처음부터 (기록 전체 삭제)</button>
+    </div>
+  </section>
+
+  <!-- ══════════ 근무 화면 ══════════ -->
+  <section id="workScreen" class="screen hidden">
+
+    <!-- 벽 -->
+    <div class="wall">
+      <div class="sign">♻ 우리동네 재활용 센터</div>
+      <div id="noticeBoard" class="notice-board">
+        <div class="pin"></div>
+        <div class="notice-label">오늘의 배출일</div>
+        <div id="noticeCat" class="notice-cat">종이류</div>
+      </div>
+      <div class="hud">
+        <span class="hud-chip">👜 <b id="bagCount">1</b>/<b id="bagTotal">5</b></span>
+        <span class="hud-chip">✅ <b id="scoreOk">0</b> &nbsp;❌ <b id="scoreBad">0</b></span>
+      </div>
+    </div>
+
+    <!-- 창구 -->
+    <div class="booth">
+      <div id="personSlot" class="person-slot"></div>
+      <div id="speech" class="speech hidden">
+        <span id="speechText"></span>
+      </div>
+    </div>
+
+    <!-- 책상 -->
+    <div class="desk">
+      <div class="desk-edge"></div>
+
+      <div id="bagArea" class="bag-area">
+        <button id="bagBtn" class="bag hidden" aria-label="봉투 열기">
+          <svg viewBox="0 0 100 110" aria-hidden="true">
+            <path d="M18 34 h64 l-7 66 a8 8 0 0 1 -8 7 h-34 a8 8 0 0 1 -8 -7 z" fill="#c8b28f" stroke="#a58e69" stroke-width="3"/>
+            <path d="M32 34 c0-22 36-22 36 0" fill="none" stroke="#a58e69" stroke-width="5" stroke-linecap="round"/>
+            <text x="50" y="76" text-anchor="middle" font-size="15" font-weight="800" fill="#7a6647">톡!</text>
+          </svg>
+          <span class="bag-hint">봉투를 눌러 열기</span>
+        </button>
+        <div id="itemRow" class="item-row"></div>
+        <div id="verdictSlip" class="verdict-slip hidden">
+          <span id="slipText">검사 결과</span>
+          <div id="inkMark" class="ink hidden"></div>
+        </div>
+      </div>
+
+      <!-- 재활용이 (AI 알바) -->
+      <div id="aiZone" class="ai-zone hidden">
+        <div id="aiSpeech" class="ai-speech hidden"><span id="aiSpeechText"></span></div>
+        <div id="aiAvatar" class="ai-avatar"></div>
+        <div class="ai-name">재활용이</div>
+      </div>
+
+      <button id="notebookBtn" class="notebook-btn hidden" aria-label="알바 수첩 열기">
+        <span class="notebook-icon">📒</span>
+        <span class="notebook-label">알바 수첩</span>
+      </button>
+
+      <!-- 도장 받침 -->
+      <div class="stamp-tray">
+        <button id="stampPass" class="stamp stamp-pass" disabled>
+          <span class="stamp-head">통과</span>
+          <span class="stamp-handle"></span>
+        </button>
+        <button id="stampDeny" class="stamp stamp-deny" disabled>
+          <span class="stamp-head">반려</span>
+          <span class="stamp-handle"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- [잠깐!] 개입 -->
+    <div id="interveneBar" class="intervene-bar hidden">
+      <div class="intervene-timer"><div id="interveneFill" class="intervene-fill"></div></div>
+      <button id="interveneBtn" class="intervene-btn">✋ 잠깐!</button>
+    </div>
+
+    <!-- 검수(교정) 오버레이 -->
+    <div id="reviewOverlay" class="review-overlay hidden">
+      <div class="review-card">
+        <h3>어디가 잘못됐어요?</h3>
+        <p class="review-sub">잘못 분류된 물건을 눌러서 알려주세요. 재활용이가 수첩에 적어둘 거예요.</p>
+        <div id="reviewItems" class="review-items"></div>
+        <button id="reviewDone" class="big-button">다시 판정해봐!</button>
+      </div>
+    </div>
+
+    <!-- 벌점 통지서 -->
+    <div id="citation" class="citation hidden">
+      <div class="citation-head">⚠ 검사 실수 통지서</div>
+      <p id="citationText"></p>
+      <button id="citationOk" class="small-button">확인</button>
+    </div>
+
+    <!-- 물건 확대 -->
+    <div id="zoom" class="zoom hidden">
+      <div class="zoom-card">
+        <div id="zoomArt" class="zoom-art"></div>
+        <div id="zoomName" class="zoom-name"></div>
+        <button id="zoomClose" class="small-button">내려놓기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 정산 화면 ══════════ -->
+  <section id="endScreen" class="screen hidden">
+    <div class="end-card">
+      <h2>오늘의 근무 정산</h2>
+      <div class="end-stats">
+        <div class="stat"><div id="endAcc" class="stat-big">0%</div><div class="stat-label">검사 정확도</div></div>
+        <div class="stat"><div id="endOk" class="stat-big">0</div><div class="stat-label">올바른 판정</div></div>
+        <div class="stat"><div id="endBad" class="stat-big">0</div><div class="stat-label">실수</div></div>
+      </div>
+      <div id="endGrade" class="end-grade"></div>
+      <div id="aiStats" class="ai-stats hidden">
+        <div class="ai-stats-row"><span>🧑 내 최고 정확도</span><b id="statHuman">-</b></div>
+        <div class="ai-stats-row"><span>🤖 재활용이 정확도 기록</span><span id="statAi" class="ai-history"></span></div>
+      </div>
+      <div id="endCitations" class="end-citations"></div>
+      <button id="nextDayBtn" class="big-button next-day hidden">▶ 다음 일차로 넘어가기</button>
+      <div class="end-actions">
+        <button id="homeBtn" class="big-button ghost">🏠 처음으로</button>
+        <button id="retryBtn" class="big-button ghost">내가 근무하기</button>
+        <button id="nextBtn" class="big-button">🤖 재활용이에게 맡기기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 출근 전 오리엔테이션 -->
+  <div id="orientOverlay" class="notebook-overlay hidden">
+    <div class="notebook-card">
+      <div class="orient-head">
+        <div id="orientAvatar" class="orient-avatar"></div>
+        <div class="orient-bubble" id="orientBubble">
+          저… 출근 전에 <b>딱 3개만</b> 미리 가르쳐 주세요!<br/>한 번에 많이는 못 외워요…
+        </div>
+      </div>
+      <div id="orientStepTeach">
+        <div class="orient-counter">가르친 것 <b id="orientCount">0</b> / 3</div>
+        <div id="orientGrid" class="orient-grid"></div>
+      </div>
+      <div id="orientStepPolicy" class="hidden">
+        <h3 style="margin-bottom:4px">그리고 하나만 더요!</h3>
+        <p class="review-sub">수첩에 없는 <b>모르는 물건</b>이 나오면, 저 어떻게 할까요?</p>
+        <div class="policy-cards" id="orientPolicyCards"></div>
+        <button id="orientStart" class="big-button" disabled>출근시키기!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 재활용이의 가설 제안 -->
+  <div id="hypoOverlay" class="notebook-overlay hidden">
+    <div class="notebook-card hypo-card">
+      <div class="orient-head">
+        <div id="hypoAvatar" class="orient-avatar"></div>
+        <div class="orient-bubble">저, 일하다가 <b>뭔가 알아낸 것 같아요!</b> 💡</div>
+      </div>
+      <div id="hypoText" class="hypo-text"></div>
+      <div class="hypo-actions">
+        <button id="hypoYes" class="big-button">맞아! 규칙에 적어둬</button>
+        <button id="hypoNo" class="big-button ghost">아니야, 그건 아냐</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 알바 수첩 (어디서든 열람·편집) -->
+  <div id="notebookOverlay" class="notebook-overlay hidden">
+    <div class="notebook-card">
+      <h3>📒 재활용이의 알바 수첩</h3>
+      <p class="review-sub">재활용이가 배운 것들이에요. 새로운 건 <b>근무 중에 틀렸을 때</b> 가르칠 수 있어요.</p>
+      <div id="notebookCols" class="notebook-cols"></div>
+      <div class="nb-unknown-title">❓ 아직 수첩에 없는 것 — 근무하다 보면 만나게 될 거예요</div>
+      <div id="notebookUnknown" class="notebook-unknown"></div>
+      <div class="nb-rules-title">📐 공통점 규칙 — 재활용이가 스스로 알아낸 것</div>
+      <div id="notebookRules" class="nb-rules"></div>
+      <div class="nb-policy-title">🧭 재활용이의 방침 — 모르는 물건이 나오면?</div>
+      <div id="notebookPolicy" class="policy-cards small"></div>
+      <button id="notebookClose" class="small-button">덮기</button>
+    </div>
+  </div>
+
+  <!-- 분류 고르기 -->
+  <div id="catPicker" class="cat-picker hidden">
+    <div class="cat-picker-card">
+      <div id="catPickerName" class="cat-picker-name"></div>
+      <p class="review-sub">이건 무엇으로 가르쳐줄까요?</p>
+      <div class="cat-buttons">
+        <button data-cat="paper" class="cat-btn cat-paper">종이류</button>
+        <button data-cat="can" class="cat-btn cat-can">캔류</button>
+        <button data-cat="food" class="cat-btn cat-food">음식물</button>
+        <button data-cat="plastic" class="cat-btn cat-plastic">플라스틱류</button>
+        <button data-cat="trash" class="cat-btn cat-trash">❌ 재활용 안 됨</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script src="./game.js"></script>
+</body>
+</html>
