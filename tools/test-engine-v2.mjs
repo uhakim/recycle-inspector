@@ -21,7 +21,7 @@ const seeded = (seed) => () => {
   b.policy = "guess";
   addRule(b, ["shiny", "cyl"], "can");
   b.reg.cola = "paper"; // 일부러 잘못 등록 (garbage in)
-  const r = classifyItem("cola", b, "can", seeded(1));
+  const r = classifyItem("cola", b);
   ok(r.cat === "paper" && r.source === "reg", `등록이 규칙보다 우선 (콜라캔→종이 오답 유지: ${r.cat}/${r.source})`);
 }
 
@@ -31,7 +31,7 @@ const seeded = (seed) => () => {
   b.policy = "deny";
   addRule(b, ["red"], "can");            // 함정 규칙
   addRule(b, ["red", "cyl"], "plastic"); // 더 구체적
-  const r = classifyItem("ketchup", b, "can", seeded(2)); // 케첩통: red+cyl+...
+  const r = classifyItem("ketchup", b); // 케첩통: red+cyl+...
   ok(r.cat === "plastic" && r.source === "rule", `구체성 우선 (케첩통: ${r.cat})`);
 }
 
@@ -41,20 +41,22 @@ const seeded = (seed) => () => {
   b.policy = "deny";
   addRule(b, ["blue", "hard"], "plastic");
   addRule(b, ["shiny", "cyl"], "can");
-  const r = classifyItem("cider", b, "can", seeded(3)); // 사이다캔: blue,cyl,shiny,cold,hard → 2:2 동점
-  ok(!!r.conflict && r.cat === "reject", `동점 혼란 → 방침(반려) + 충돌 기록 (${JSON.stringify(r.conflict?.cats)})`);
+  const r = classifyItem("cider", b); // 사이다캔: blue,cyl,shiny,cold,hard → 2:2 동점
+  ok(!!r.conflict && r.cat === "unknown", `동점 혼란 → 모름 + 충돌 기록 (${JSON.stringify(r.conflict?.cats)})`);
 }
 
-/* ── 4. 방침 3종 ── */
+/* ── 4. 모름 + 방침(봉투 단위) ── */
 {
   const b = emptyBrain();
-  b.policy = "pass";
-  ok(classifyItem("basin", b, "can", seeded(4)).cat === "can", "방침 pass → 오늘 배출일로 간주");
-  b.policy = "deny";
-  ok(classifyItem("basin", b, "can", seeded(4)).cat === "reject", "방침 deny → 반려");
-  b.policy = "guess";
-  const r = classifyItem("basin", b, "can", seeded(4));
-  ok(["paper", "can", "food", "plastic"].includes(r.cat), `방침 guess → 찍기 (${r.cat})`);
+  ok(classifyItem("basin", b).cat === "unknown", "모르는 물건 → unknown (분류를 지어내지 않음)");
+  const { bagVerdict } = await import("../v2/engine.js");
+  const gUnknown = [{ cat: "unknown" }];
+  ok(bagVerdict(gUnknown, "can", "pass").pass === true, "방침 pass → 모르는 봉투 통과");
+  ok(bagVerdict(gUnknown, "can", "deny").pass === false, "방침 deny → 모르는 봉투 반려");
+  const coin = [0, 1, 2, 3, 4, 5].map((i) => bagVerdict(gUnknown, "can", "guess", seeded(40 + i)).pass);
+  ok(coin.includes(true) && coin.includes(false), `방침 guess → 동전 던지기 (${coin.map((x) => x ? "통" : "반").join("")})`);
+  const gMix = [{ cat: "paper" }, { cat: "unknown" }];
+  ok(bagVerdict(gMix, "can", "pass").reason === "known-wrong", "아는 것이 오늘 것 아니면 방침 무관 확실 반려");
 }
 
 /* ── 5. 규칙 슬롯 8 제한·중복 방지 ── */
@@ -86,7 +88,7 @@ const seeded = (seed) => () => {
   let sum = 0, runs = 40;
   for (let k = 0; k < runs; k++) {
     const r = seeded(100 + k);
-    sum += runChallenge(makeTutorial2Bags(b, curated, 5, r), b, "can", r).itemAcc;
+    sum += runChallenge(makeTutorial2Bags(b, curated, 5, "can", r), b, "can", r).itemAcc;
   }
   const c2avg = sum / runs;
   ok(c2avg > 0.35 && c2avg < 0.75, `도전 2 = 좌절 구간 40~75% (평균 ${Math.round(c2avg * 100)}%)`);

@@ -59,10 +59,12 @@ function prepareRun() {
     return { bags: makeBags(pool, "paper", 4), todayCat: "paper" };
   }
   if (phase === "c2") {
+    const regged = Object.keys(brain.reg);
+    const today = CATS[brain.reg[regged[0]]] ? brain.reg[regged[0]] : "paper";
     const curated = Object.keys(ITEMS).filter((id) =>
-      !brain.reg[id] && itemOf(id).stage <= 2 && itemOf(id).cat !== "paper")
+      !brain.reg[id] && itemOf(id).stage <= 2 && itemOf(id).cat !== today)
       .sort(() => Math.random() - 0.5).slice(0, 8);
-    return { bags: makeTutorial2Bags(brain, curated, 5), todayCat: "paper" };
+    return { bags: makeTutorial2Bags(brain, curated, 5, today), todayCat: today };
   }
   const today = ["paper", "can", "food", "plastic"][Math.floor(Math.random() * 4)];
   return { bags: makeBags(poolFree(4), today, 5), todayCat: today };
@@ -132,7 +134,7 @@ async function playChallenge() {
       const card = $(`card${b}-${i}`);
       if (card) card.classList.add("inspecting");
       const tag = $(`tag${b}-${i}`);
-      const catName = g.cat === "reject" ? "반려" : CATS[g.cat];
+      const catName = g.cat === "unknown" ? "몰라요" : CATS[g.cat];
       if (g.source === "reg") {
         aiSay(`${it.name}! 수첩에 있어요 — ${catName}!`);
         if (tag) tag.className = "itag t-reg", tag.textContent = catName;
@@ -141,18 +143,11 @@ async function playChallenge() {
         aiSay(`${it.name}… 규칙이다! ${feats}는 ${catName}!`);
         if (tag) tag.className = "itag t-rule", tag.textContent = `📐 ${catName}`;
       } else if (g.conflict) {
-        aiSay(`으악, ${it.name}에서 규칙 두 개가 싸워요! 🤯 방침대로 할게요…`);
-        if (tag) tag.className = "itag t-conflict", tag.textContent = `🤯 ${catName}`;
-      } else if (g.source === "policy-pass") {
-        aiSay(`${it.name}…? 몰라요. 방침대로 일단 통과!`);
-        if (tag) tag.className = "itag t-policy", tag.textContent = `🙂 ${catName}`;
-      } else if (g.source === "policy-deny") {
-        aiSay(`${it.name}…? 모르는 건 방침대로 반려!`);
-        if (tag) tag.className = "itag t-policy", tag.textContent = `🛑 반려`;
+        aiSay(`으악, ${it.name}에서 규칙 두 개가 싸워요! 🤯 모르겠어요…`);
+        if (tag) tag.className = "itag t-conflict", tag.textContent = `🤯 ?`;
       } else {
-        aiSay(`${it.name}…? 🎲 ${catName} 아닐까요?`);
-        Sound.dice();
-        if (tag) tag.className = "itag t-policy", tag.textContent = `🎲 ${catName}`;
+        aiSay(`${it.name}…? 수첩에도 규칙에도 없어요. 모르겠어요…`);
+        if (tag) tag.className = "itag t-policy", tag.textContent = `❓ 몰라요`;
       }
       await wait(g.source === "reg" ? 850 : 1050);
     }
@@ -160,7 +155,15 @@ async function playChallenge() {
 
     // 봉투 판정 도장
     if (!skipAll) {
-      aiSay(bag.aiPass ? `전부 ${CATS[todayCat]}! 통과입니다!` : `${CATS[todayCat]} 아닌 게 있어요! 반려!`);
+      const verdictLine = {
+        "known-wrong": `${CATS[todayCat]} 아닌 게 있어요! 반려!`,
+        "all-known": `전부 ${CATS[todayCat]}! 통과입니다!`,
+        "policy-pass": "모르는 게 있지만… 방침대로 통과!",
+        "policy-deny": "모르는 건 못 믿어요. 방침대로 반려!",
+        "policy-coin": `모르겠으니… 동전 던지기! 🎲 ${bag.aiPass ? "통과" : "반려"}!`,
+      }[bag.reason] || (bag.aiPass ? "통과입니다!" : "반려!");
+      if (bag.reason === "policy-coin") Sound.dice();
+      aiSay(verdictLine);
       await wait(700);
       Sound.stamp();
       const stampEl = bag.aiPass ? $("stampPass") : $("stampDeny");
@@ -453,9 +456,9 @@ function renderWrongList() {
     ? wrong.map((p) => {
         const it = itemOf(p.id);
         const done = !!brain.reg[p.id] && p.source !== "reg";
-        const said = p.cat === "reject" ? "반려" : CATS[p.cat] || "?";
+        const said = p.cat === "unknown" ? "❓ 몰랐어요" : `${CATS[p.cat] || "?"}라고 함`;
         return `<button class="wrong-item ${done ? "taught" : ""}" data-t="${p.id}" ${done ? "disabled" : ""}>
-          ${it.name} <small>(${said}라고 함)</small>${done ? " ✔" : ""}</button>`;
+          ${it.name} <small>(${said})</small>${done ? " ✔" : ""}</button>`;
       }).join("")
     : `<span class="cnt">✨ 틀린 게 없어요! 완벽!</span>`;
   document.querySelectorAll("[data-t]").forEach((b) =>
