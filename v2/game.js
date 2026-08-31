@@ -164,7 +164,7 @@ async function playChallenge() {
       const stampEl = bag.aiPass ? $("stampPass") : $("stampDeny");
       stampEl.classList.add("slammed");
       setTimeout(() => stampEl.classList.remove("slammed"), 240);
-      $("verdict").className = `verdict ${bag.aiPass ? "pass" : "deny"}`;
+      $("verdict").className = `ink ${bag.aiPass ? "pass" : "deny"} slam`;
       $("verdictText").textContent = bag.aiPass ? "통과" : "반려";
       $("verdict").classList.remove("hidden");
       await wait(750);
@@ -240,7 +240,7 @@ async function runHumanShift() {
     const stampEl = passed ? $("stampPass") : $("stampDeny");
     stampEl.classList.add("slammed");
     setTimeout(() => stampEl.classList.remove("slammed"), 240);
-    $("verdict").className = `verdict ${passed ? "pass" : "deny"}`;
+    $("verdict").className = `ink ${passed ? "pass" : "deny"} slam`;
     $("verdictText").textContent = passed ? "통과" : "반려";
     $("verdict").classList.remove("hidden");
     const wrongItems = bag.filter((id) => itemOf(id).cat !== todayCat);
