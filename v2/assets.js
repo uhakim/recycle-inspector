@@ -170,5 +170,5 @@ export const AI_SVG = `<svg viewBox="0 0 120 130" aria-hidden="true">
 export const ITEM_PLACEHOLDER = `<svg viewBox="0 0 100 100" aria-hidden="true">
   <path d="M28 30 h44 l-4 52 a8 8 0 0 1 -8 7 h-22 a8 8 0 0 1 -8 -7 z" fill="#e8dcc2" stroke="#b9ab8b" stroke-width="3"/>
   <path d="M38 30 c0-14 24-14 24 0" fill="none" stroke="#b9ab8b" stroke-width="4" stroke-linecap="round"/>
-  <text x="50" y="66" text-anchor="middle" font-size="26" fill="#a08c62">?</text>
+  <rect x="34" y="54" width="32" height="9" rx="3" fill="#d3c4a0"/>
 </svg>`;

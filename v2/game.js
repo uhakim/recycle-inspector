@@ -6,6 +6,8 @@ import {
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
 } from "./engine.js";
 import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js";
+import { ART } from "./art.js";
+const art = (id) => ART[id] || ITEM_PLACEHOLDER;
 
 const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
 const $ = (id) => document.getElementById(id);
@@ -116,7 +118,7 @@ async function playChallenge() {
     $("itemRow").innerHTML = guesses.map((g, i) => {
       const it = itemOf(g.id);
       return `<div class="icard" id="card${b}-${i}" style="animation-delay:${i * 0.08}s">
-        ${ITEM_PLACEHOLDER}<span class="iname">${it.name}</span><span class="itag" id="tag${b}-${i}">?</span></div>`;
+        ${art(g.id)}<span class="iname">${it.name}</span><span class="itag" id="tag${b}-${i}">?</span></div>`;
     }).join("");
     await wait(guesses.length * 90 + 380);
 
@@ -225,7 +227,7 @@ async function runHumanShift() {
     $("bagBtn").classList.add("hidden");
     $("itemRow").innerHTML = bag.map((id, i) =>
       `<div class="icard tapable" data-z="${id}" style="animation-delay:${i * 0.08}s">
-        ${ITEM_PLACEHOLDER}<span class="iname">${itemOf(id).name}</span></div>`).join("");
+        ${art(id)}<span class="iname">${itemOf(id).name}</span></div>`).join("");
     document.querySelectorAll("[data-z]").forEach((c) =>
       c.addEventListener("click", () => openInspect(c.dataset.z)));
     await wait(bag.length * 90 + 300);
@@ -416,7 +418,7 @@ function openOrient() {
     .filter((id) => itemOf(id).stage === 1 && !brain.reg[id])
     .sort(() => Math.random() - 0.5).slice(0, 6);
   $("orientGrid").innerHTML = candidates.map((id) =>
-    `<button class="orient-item" data-o="${id}">${ITEM_PLACEHOLDER}${itemOf(id).name}</button>`).join("");
+    `<button class="orient-item" data-o="${id}">${art(id)}${itemOf(id).name}</button>`).join("");
   document.querySelectorAll("[data-o]").forEach((btn) =>
     btn.addEventListener("click", () => {
       if (brain.reg[btn.dataset.o] || orientTaught >= 3) return;
