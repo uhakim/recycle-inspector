@@ -11,13 +11,37 @@
 
   <!-- ══════ 홈 ══════ -->
   <section id="home" class="screen">
-    <div class="home-card">
-      <h1 class="title">분리수거<br/>검사관 <span class="v2badge">v2</span></h1>
-      <p id="homeTag" class="tag">재활용이를 튜닝하고, 도전으로 실력을 확인하세요</p>
-      <button id="humanBtn" class="big ghost">🧑 내가 검사관 해보기</button>
-      <button id="challengeBtn" class="big">🚛 도전 시작!</button>
-      <button id="notebookBtn" class="big ghost">📒 알바 수첩</button>
-      <button id="histBtn" class="big ghost">📈 훈련 기록</button>
+    <div class="start-card">
+      <div class="peek">
+        <div id="peekAvatar" class="peek-avatar"></div>
+        <div id="greet" class="greet"></div>
+      </div>
+      <div class="logo-stamp">
+        <svg viewBox="0 0 120 120" class="logo-mark" aria-hidden="true">
+          <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="7"/>
+          <circle cx="60" cy="60" r="42" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="4 5"/>
+          <path d="M60 30 a6 6 0 1 1 0.1 0 M43 76 l12 -22 l10 18 l7 -12 l11 20 z" fill="currentColor"/>
+          <path d="M36 52 l8 8 l-8 8 M84 52 l-8 8 l8 8" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1 class="game-title">분리수거<br/>검사관</h1>
+      <p class="game-tag">오늘도 우리 동네 재활용장은 평화로워야 한다</p>
+      <div class="mode-select">
+        <button id="humanBtn" class="mode-card">
+          <span class="mode-emoji">🧑</span>
+          <span class="mode-title">내가 검사관</span>
+          <span class="mode-desc">직접 도장을 찍으며<br/>검사 일을 익혀요</span>
+        </button>
+        <button id="challengeBtn" class="mode-card ai-card">
+          <span class="mode-emoji">🤖</span>
+          <span id="aiCardTitle" class="mode-title">재활용이에게 맡기기</span>
+          <span id="aiCardDesc" class="mode-desc">신입 AI를 가르쳐서<br/>도전에 내보내요</span>
+        </button>
+      </div>
+      <div class="start-row">
+        <button id="notebookBtn" class="mini-btn">📒 알바 수첩</button>
+        <button id="histBtn" class="mini-btn">📈 훈련 기록</button>
+      </div>
       <div id="homeStats" class="home-stats"></div>
       <button id="resetBtn" class="reset-link">🔄 처음부터 (기록 삭제)</button>
     </div>

@@ -384,3 +384,50 @@ select {
   border-radius: 8px; padding: 1px 7px; font-size: .74rem; font-weight: 700; margin: 1px 0; }
 
 .hist-bar.tut { background: #d8d2c2; color: #8b8371; }
+
+
+/* ── 홈: v1 스타트 카드 + 재활용이 인사 ── */
+.start-card {
+  width: 100%; text-align: center; padding: 24px 18px 20px; position: relative;
+  margin-top: max(8vh, 76px);
+  background: var(--paper); border: 2.5px solid var(--ink); border-radius: 20px;
+  box-shadow: 6px 6px 0 rgba(46,57,71,.15);
+}
+.peek {
+  position: absolute; top: -66px; left: 0; right: 0;
+  display: flex; align-items: flex-end; justify-content: center; gap: 8px;
+  pointer-events: none;
+}
+.peek-avatar { width: 88px; }
+.peek-avatar svg { width: 100%; }
+.greet {
+  max-width: 58%; background: #eaf6fb; border: 2.5px solid #79b7d4;
+  border-radius: 14px 14px 14px 4px; padding: 8px 12px;
+  font-size: .82rem; font-weight: 700; text-align: left; line-height: 1.45;
+  box-shadow: var(--shadow); margin-bottom: 26px;
+}
+.logo-stamp { width: 96px; height: 96px; margin: 14px auto 8px; color: var(--green-deep); transform: rotate(-8deg); }
+.logo-mark { filter: drop-shadow(0 3px 0 rgba(0,0,0,0.12)); }
+.game-title {
+  font-size: clamp(2.2rem, 7vw, 3.4rem); line-height: 1.04; font-weight: 900; letter-spacing: -0.02em;
+  color: var(--ink); text-shadow: 0 3px 0 rgba(255,255,255,0.65);
+}
+.game-tag { font-size: .82rem; font-weight: 700; color: var(--sub); margin-top: 8px; }
+.mode-select { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+.mode-card {
+  border: 0; border-radius: 20px; padding: 18px 20px 16px; cursor: pointer; font-family: inherit;
+  flex: 1 1 150px; max-width: 240px; text-align: center; background: #fff;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.13), var(--shadow);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  transition: transform 0.1s ease;
+}
+.mode-card:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,0.13); }
+.mode-card.ai-card { outline: 3px solid rgba(44,110,143,0.35); }
+.mode-emoji { font-size: 2.1rem; }
+.mode-title { font-size: 1.05rem; font-weight: 900; color: var(--ink); }
+.mode-desc { font-size: 0.8rem; font-weight: 600; color: var(--sub); line-height: 1.45; }
+.start-row { margin-top: 16px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.mini-btn {
+  font-family: inherit; font-size: .86rem; font-weight: 800; padding: 9px 16px;
+  border: 2px solid var(--ink); border-radius: 999px; background: #fff; cursor: pointer;
+}

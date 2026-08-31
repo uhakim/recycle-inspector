@@ -685,23 +685,30 @@ $("nbOverlay").addEventListener("click", (e) => { if (e.target === $("nbOverlay"
 
 /* ── 홈 ── */
 function renderHome() {
-  const tag = {
-    orient: "먼저 🧑 검사관을 해보고, 신입 AI 재활용이를 가르쳐 보세요!",
-    c1: "재활용이의 첫 근무! 수첩에 적어준 것만 나올 거예요",
-    c2: "이번엔 새로운 주민들이 온다는 소문이…",
-    free: "수첩을 튜닝하고, 도전으로 실력을 확인하세요",
+  $("peekAvatar").innerHTML = AI_SVG;
+  const freeRuns = history.filter((h) => h.phase === "free");
+  const freeBest = freeRuns.length ? Math.max(...freeRuns.map((h) => h.score)) : null;
+  $("greet").textContent = {
+    orient: "안녕하세요! 오늘 첫 출근인데… 잘 부탁드려요! 🤖",
+    c1: "수첩 받았어요! 적어주신 것만 믿고 가볼게요!",
+    c2: "저… 오늘은 처음 보는 주민들이 온다는 소문이 있던데요…?",
+    free: freeBest !== null
+      ? `규칙 ${brain.rules.length}/${RULE_SLOTS}칸 쓰는 중! 최고 ${freeBest}점 — 오늘도 튜닝해 주실 거죠?`
+      : "이제 닮은 점으로 배울 수 있어요! 규칙 만들어 주세요!",
   }[phase];
-  $("homeTag").textContent = tag;
-  $("challengeBtn").textContent =
-    phase === "orient" ? "🤖 재활용이 만나기" :
-    phase === "c1" ? "🚛 첫 도전!" :
-    phase === "c2" ? "🚛 도전 2" : "🚛 도전 시작!";
-  const best = history.length ? Math.max(...history.map((h) => h.score)) : null;
+  $("aiCardTitle").textContent =
+    phase === "orient" ? "재활용이 만나기" :
+    phase === "c1" ? "첫 도전!" :
+    phase === "c2" ? "도전 2" : "재활용이에게 맡기기";
+  $("aiCardDesc").innerHTML =
+    phase === "orient" ? "신입 AI에게<br/>일을 가르쳐요" :
+    phase === "c1" ? "가르친 것만 나와요<br/>가뿐하게 가보자!" :
+    phase === "c2" ? "새로운 주민들이<br/>온다는데…" : "수첩을 튜닝하고<br/>도전 보내기";
   const last = history[history.length - 1];
   $("homeStats").innerHTML = [
     humanBest !== null ? `🧑 내 최고 ${humanBest}점` : "",
     `📒 외운 물건 ${Object.keys(brain.reg).length}개` + (phase === "free" ? ` · 📐 규칙 ${brain.rules.length}/${RULE_SLOTS}` : ""),
-    history.length ? `🚛 재활용이 도전 ${history.length}회 · 최고 <b style="color:var(--green-deep)">${best}점</b> · 최근 ${last.score}점` : "",
+    history.length ? `🚛 재활용이 도전 ${history.length}회 · 최고 <b style="color:var(--green-deep)">${freeBest ?? Math.max(...history.map((h) => h.score))}점</b> · 최근 ${last.score}점` : "",
   ].filter(Boolean).join("<br/>");
 }
 
