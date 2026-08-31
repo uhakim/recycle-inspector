@@ -44,33 +44,35 @@
     </div>
     <div class="desk">
       <div class="desk-edge"></div>
-      <button id="bagBtn" class="bag hidden" aria-label="봉투 열기">
-        <svg viewBox="0 0 100 110" aria-hidden="true">
-          <path d="M18 34 h64 l-7 66 a8 8 0 0 1 -8 7 h-34 a8 8 0 0 1 -8 -7 z" fill="#c8b28f" stroke="#a58e69" stroke-width="3"/>
-          <path d="M32 34 c0-22 36-22 36 0" fill="none" stroke="#a58e69" stroke-width="5" stroke-linecap="round"/>
-          <text x="50" y="76" text-anchor="middle" font-size="15" font-weight="800" fill="#7a6647">톡!</text>
-        </svg>
-        <span id="bagHint" class="bag-hint">봉투를 눌러 열기</span>
-      </button>
-      <div id="itemRow" class="item-row"></div>
-      <div class="verdict-slip">검사 전표
-        <div id="verdict" class="ink hidden"><span id="verdictText"></span></div>
-      </div>
-      <div class="ai-zone">
-        <div id="aiSpeech" class="ai-speech hidden"><span id="aiSpeechText"></span></div>
-        <div id="aiAvatar" class="ai-avatar"></div>
-        <div class="ai-name">재활용이</div>
+      <div class="bag-area">
+        <button id="bagBtn" class="bag hidden" aria-label="봉투 열기">
+          <svg viewBox="0 0 100 110" aria-hidden="true">
+            <path d="M18 34 h64 l-7 66 a8 8 0 0 1 -8 7 h-34 a8 8 0 0 1 -8 -7 z" fill="#c8b28f" stroke="#a58e69" stroke-width="3"/>
+            <path d="M32 34 c0-22 36-22 36 0" fill="none" stroke="#a58e69" stroke-width="5" stroke-linecap="round"/>
+            <text x="50" y="76" text-anchor="middle" font-size="15" font-weight="800" fill="#7a6647">톡!</text>
+          </svg>
+          <span id="bagHint" class="bag-hint">봉투를 눌러 열기</span>
+        </button>
+        <div id="itemRow" class="item-row"></div>
+        <div class="verdict-slip">검사 전표
+          <div id="verdict" class="ink hidden"><span id="verdictText"></span></div>
+        </div>
+        <div class="ai-zone">
+          <div id="aiSpeech" class="ai-speech hidden"><span id="aiSpeechText"></span></div>
+          <div id="aiAvatar" class="ai-avatar"></div>
+          <div class="ai-name">재활용이</div>
+        </div>
+        <div id="citation" class="citation hidden">
+          <div class="citation-head">⚠ 검사 실수!</div>
+          <p id="citationText"></p>
+          <button id="citationOk" class="small">확인</button>
+        </div>
       </div>
       <div class="stamp-tray">
         <button id="stampPass" class="stamp stamp-pass" disabled>
           <span class="stamp-head">통과</span><span class="stamp-handle"></span></button>
         <button id="stampDeny" class="stamp stamp-deny" disabled>
           <span class="stamp-head">반려</span><span class="stamp-handle"></span></button>
-      </div>
-      <div id="citation" class="citation hidden">
-        <div class="citation-head">⚠ 검사 실수!</div>
-        <p id="citationText"></p>
-        <button id="citationOk" class="small">확인</button>
       </div>
     </div>
   </section>

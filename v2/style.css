@@ -150,19 +150,18 @@ select {
 }
 .ichip { cursor: pointer; text-decoration: underline dotted var(--line); text-underline-offset: 3px; }
 
-/* ═══════════ 3단계: 근무 씬·오리엔테이션·대사 ═══════════ */
+/* ═══════════ 3단계: 근무 씬 (v1 원본 수치) ═══════════ */
 
+:root { --desk: #e8d2ab; --desk-deep: #d4b483; --shadow: 0 10px 24px rgba(46,57,71,.18); --red-deep2: #b8433a; }
 .screen.work { flex-direction: column; padding: 0; align-items: stretch; }
 .wall {
   background: linear-gradient(#cfe6de, #c2ddd3); padding: 12px 14px 8px;
   display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap;
 }
-.sign {
-  background: #2f9e6e; color: #fff; font-weight: 900; font-size: .82rem;
-  padding: 6px 12px; border-radius: 9px; box-shadow: 0 3px 0 #237a54;
-}
+.sign { background: var(--green); color: #fff; font-weight: 900; font-size: .82rem;
+  padding: 6px 12px; border-radius: 9px; box-shadow: 0 3px 0 var(--green-deep); }
 .notice {
-  background: #fffdf4; border: 2px solid var(--ink); border-radius: 10px;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 10px;
   padding: 6px 14px 8px; text-align: center; position: relative;
   transform: rotate(-1.5deg); box-shadow: 3px 3px 0 rgba(46,57,71,.18);
 }
@@ -171,10 +170,8 @@ select {
 .notice-label { font-size: .66rem; font-weight: 800; color: var(--sub); }
 .notice-cat { font-size: 1.05rem; font-weight: 900; }
 .hud { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
-.hud-chip {
-  background: #fffdf4; border: 2px solid var(--ink); border-radius: 999px;
-  font-size: .76rem; font-weight: 800; padding: 5px 10px; font-family: inherit;
-}
+.hud-chip { background: var(--paper); border: 2px solid var(--ink); border-radius: 999px;
+  font-size: .76rem; font-weight: 800; padding: 5px 10px; font-family: inherit; }
 .hud-btn { cursor: pointer; }
 .booth {
   flex: 0 0 auto; min-height: 148px; position: relative;
@@ -191,48 +188,137 @@ select {
   background: #fff; border: 2px solid var(--ink); border-radius: 12px;
   padding: 7px 12px; font-size: .82rem; font-weight: 700; max-width: 84%;
 }
+
+/* 책상 — v1 원본 */
 .desk {
-  flex: 1; background: #e8d2ab; position: relative; padding: 14px 12px 12px;
-  border-top: 6px solid #d4b483;
+  flex: 1 1 auto; position: relative; min-height: 46dvh;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 118px, rgba(0,0,0,0.045) 118px 121px),
+    linear-gradient(180deg, var(--desk) 0%, var(--desk-deep) 100%);
+  display: flex; align-items: stretch;
 }
-.desk-edge { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #c2a06b; }
-.item-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 116px; }
+.desk-edge { position: absolute; top: 0; left: 0; right: 0; height: 7px; background: rgba(255,255,255,0.35); }
+.bag-area { flex: 1 1 auto; position: relative; display: flex; align-items: center; justify-content: center; }
+.bag {
+  border: 0; background: transparent; cursor: pointer; text-align: center;
+  animation: slideBag 0.5s cubic-bezier(0.2, 0.8, 0.3, 1.15); font-family: inherit;
+}
+.bag svg { width: clamp(110px, 16vw, 150px); filter: drop-shadow(0 8px 8px rgba(0,0,0,0.18)); }
+.bag-hint {
+  display: block; margin-top: 4px; font-weight: 800; color: #7a6647; font-size: 0.9rem;
+  animation: bob 1.4s ease-in-out infinite;
+}
+@keyframes slideBag { from { transform: translateX(-70vw) rotate(-9deg); } to { transform: none; } }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.item-row {
+  display: flex; gap: clamp(8px, 1.6vw, 18px); align-items: center; justify-content: center;
+  flex-wrap: wrap; padding: 0 12px; max-width: 78%;
+}
 .icard {
-  width: 92px; background: #fffdf4; border: 2px solid var(--ink); border-radius: 11px;
-  padding: 6px 5px 7px; text-align: center; animation: dealIn .3s ease-out backwards;
-  box-shadow: 2px 3px 0 rgba(46,57,71,.15);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  width: clamp(84px, 11vw, 112px); background: var(--paper); border-radius: 14px;
+  padding: 8px 6px 7px; text-align: center; border: 0; font-family: inherit;
+  box-shadow: 0 5px 0 rgba(0,0,0,0.12), 0 8px 14px rgba(0,0,0,0.10);
+  transition: transform 0.1s ease; opacity: 0; animation: dealIn 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.25) forwards;
 }
-.icard svg { width: 54px; height: 54px; }
-.icard .iname { display: block; font-size: .74rem; font-weight: 800; }
+.icard svg { width: 76%; aspect-ratio: 1; }
+.icard .iname { font-size: clamp(0.72rem, 1.5vw, 0.86rem); font-weight: 800; color: var(--ink); }
 .icard .itag {
-  display: inline-block; margin-top: 3px; font-size: .68rem; font-weight: 800;
+  display: inline-block; margin-top: 2px; font-size: .68rem; font-weight: 800;
   border-radius: 7px; padding: 1px 7px; background: #eee; visibility: hidden;
 }
-.icard.inspecting { outline: 3px solid var(--accent); transform: translateY(-3px); }
+.icard.inspecting { outline: 4px solid #79b7d4; outline-offset: 2px; transform: translateY(-6px); }
+.icard.tapable { cursor: pointer; }
+.icard.tapable:active { transform: translateY(3px) scale(0.97); }
+@keyframes dealIn { from { opacity: 0; transform: translateY(24px) rotate(4deg) scale(0.85); } to { opacity: 1; transform: none; } }
 .itag.t-reg { background: #dff1e8; color: var(--green-deep); visibility: visible !important; }
 .itag.t-rule { background: #ece4f6; color: var(--purple); visibility: visible !important; }
 .itag.t-policy { background: #fff0d6; color: #8a6b2f; visibility: visible !important; }
 .itag.t-conflict { background: #fbe3e0; color: var(--red); visibility: visible !important; }
-@keyframes dealIn { from { transform: translateY(-26px) scale(.7); opacity: 0; } }
-.verdict {
-  position: absolute; left: 50%; top: 40%; transform: translate(-50%,-50%) rotate(-8deg);
-  font-size: 1.7rem; font-weight: 900; border: 4px solid; border-radius: 12px;
-  padding: 4px 18px; background: rgba(255,253,244,.9); animation: slam .22s ease-out;
-  z-index: 5;
+
+/* 판정 전표 + 잉크 — v1 원본 */
+.verdict-slip {
+  position: absolute; right: 3%; bottom: 8%;
+  width: clamp(120px, 15vw, 160px); height: clamp(78px, 10vw, 104px);
+  background: var(--paper); border-radius: 6px; box-shadow: var(--shadow);
+  transform: rotate(2deg); display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 700; color: #b9b2a2;
 }
-.verdict.pass { color: var(--green-deep); border-color: var(--green-deep); }
-.verdict.deny { color: var(--red); border-color: var(--red); }
-@keyframes slam { from { transform: translate(-50%,-50%) rotate(-8deg) scale(2.2); opacity: 0; } }
-.ai-zone { position: absolute; left: 10px; bottom: 8px; width: 92px; text-align: center; }
-.ai-avatar svg { width: 76px; height: 82px; }
-.ai-avatar.thinking svg { animation: think .6s ease-in-out infinite alternate; }
-@keyframes think { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
-.ai-name { font-size: .7rem; font-weight: 900; color: #4a6e78; }
+.ink {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 900; transform: rotate(-14deg);
+}
+.ink span {
+  border: 5px solid currentColor; border-radius: 10px; padding: 2px 14px; letter-spacing: 0.1em;
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='60'><filter id='n'><feTurbulence baseFrequency='0.7' numOctaves='2'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.82 0.18'/></filter><rect width='120' height='60' filter='url(%23n)'/></svg>");
+  mask-size: cover; -webkit-mask-size: cover;
+}
+.ink.pass { color: var(--green-deep); }
+.ink.deny { color: var(--red-deep2); }
+.ink.slam { animation: inkSlam 0.28s cubic-bezier(0.3, 1.6, 0.4, 1) both; }
+@keyframes inkSlam { 0% { opacity: 0; transform: rotate(-14deg) scale(2.1); } 60% { opacity: 1; transform: rotate(-14deg) scale(0.92); } 100% { transform: rotate(-14deg) scale(1); } }
+
+/* 도장 기둥 — v1 원본 */
+.stamp-tray {
+  flex: 0 0 auto; width: clamp(120px, 15vw, 168px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+  background: rgba(0,0,0,0.07); border-left: 3px solid rgba(0,0,0,0.08);
+}
+.stamp {
+  border: 0; background: transparent; cursor: pointer; font-family: inherit;
+  display: flex; flex-direction: column; align-items: center;
+  transition: transform 0.07s ease; touch-action: manipulation;
+}
+.stamp:disabled { opacity: 0.4; }
+.stamp-head {
+  width: clamp(76px, 9.5vw, 104px); height: clamp(48px, 6vw, 62px);
+  border-radius: 12px 12px 5px 5px; display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: clamp(1.05rem, 2.2vw, 1.4rem); font-weight: 900; letter-spacing: 0.15em;
+}
+.stamp-handle {
+  width: 22px; height: 26px; border-radius: 0 0 9px 9px; margin-top: -2px;
+  background: linear-gradient(180deg, #8d99a8, #5d6875);
+}
+.stamp-pass .stamp-head { background: linear-gradient(180deg, var(--green), var(--green-deep)); box-shadow: 0 5px 0 #1d5f42; }
+.stamp-deny .stamp-head { background: linear-gradient(180deg, var(--red), var(--red-deep2)); box-shadow: 0 5px 0 #93352e; }
+.stamp:not(:disabled):active { transform: translateY(6px) scale(0.96); }
+.stamp.slammed { animation: stampSlam 0.22s ease; }
+@keyframes stampSlam { 0% { transform: translateY(0); } 45% { transform: translateY(9px) scale(0.94); } 100% { transform: translateY(0); } }
+
+/* 재활용이 — v1 원본 (왼쪽) */
+.ai-zone {
+  position: absolute; left: 2.5%; bottom: 6%;
+  display: flex; flex-direction: column; align-items: center; z-index: 10;
+}
+.ai-avatar { width: clamp(84px, 11vw, 118px); }
+.ai-avatar svg { width: 100%; }
+.ai-avatar.thinking { animation: bob 0.9s ease-in-out infinite; }
+.ai-name {
+  margin-top: 2px; font-size: 0.78rem; font-weight: 900; color: #2c6e8f;
+  background: rgba(255,255,255,0.75); padding: 3px 12px; border-radius: 999px;
+}
 .ai-speech {
-  position: absolute; left: 100px; bottom: 30px; width: min(62vw, 340px);
-  background: #eafwe; background: #eaf7fb; border: 2px solid #2c6e8f; border-radius: 12px;
-  padding: 7px 11px; font-size: .8rem; font-weight: 700; text-align: left; z-index: 6;
+  position: absolute; bottom: 100%; left: 20%; margin-bottom: 8px;
+  width: max-content; max-width: clamp(230px, 40vw, 380px);
+  background: #eaf6fb; border: 2.5px solid #79b7d4; border-radius: 14px 14px 14px 4px;
+  padding: 10px 15px; font-weight: 700; font-size: clamp(0.85rem, 1.8vw, 1rem);
+  box-shadow: var(--shadow); z-index: 11; text-align: left;
 }
+.ai-speech::after {
+  content: ""; position: absolute; left: 14px; top: 100%;
+  border: 8px solid transparent; border-top-color: #79b7d4;
+}
+
+/* 통지서 — v1 원본 */
+.citation {
+  position: absolute; left: 50%; bottom: 4%; transform: translateX(-50%) rotate(-1deg);
+  width: min(430px, 88%); background: #fff7ec; border-top: 8px solid var(--red);
+  border-radius: 8px; padding: 16px 20px; box-shadow: 0 16px 34px rgba(0,0,0,0.3);
+  animation: citeUp 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2); z-index: 40; text-align: center;
+}
+@keyframes citeUp { from { opacity: 0; transform: translateX(-50%) translateY(60px) rotate(-1deg); } to { opacity: 1; transform: translateX(-50%) rotate(-1deg); } }
+.citation-head { font-weight: 900; color: var(--red); margin-bottom: 6px; }
+.citation p { font-size: .85rem; font-weight: 700; line-height: 1.5; margin-bottom: 10px; }
 
 /* 오리엔테이션·대사 */
 .orient-head { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
@@ -264,71 +350,6 @@ select {
 }
 .nb-tab.locked { opacity: .55; }
 
-/* ── 봉투·도장·통지서 (v1 이식) ── */
-.bag {
-  display: block; margin: 4px auto 8px; width: 96px; background: none; border: none;
-  cursor: pointer; font-family: inherit; animation: dealIn .35s ease-out;
-}
-.bag svg { width: 84px; height: 92px; display: block; margin: 0 auto; }
-.bag-hint {
-  display: block; font-size: .72rem; font-weight: 800; color: #7a6647;
-  background: #fff3dd; border: 1.5px dashed var(--accent); border-radius: 999px;
-  padding: 3px 9px; margin-top: 2px;
-}
-.stamp-tray {
-  display: flex; gap: 14px; justify-content: center; margin-top: 10px; padding-bottom: 4px;
-}
-.stamp {
-  font-family: inherit; border: none; background: none; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; gap: 0;
-  transition: transform .08s;
-}
-.stamp:disabled { opacity: .45; cursor: default; }
-.stamp-head {
-  font-size: .95rem; font-weight: 900; color: #fff; padding: 10px 18px;
-  border-radius: 10px 10px 4px 4px; box-shadow: 0 4px 0 rgba(0,0,0,.25);
-}
-.stamp-pass .stamp-head { background: var(--green); }
-.stamp-deny .stamp-head { background: var(--red); }
-.stamp-handle {
-  width: 26px; height: 16px; background: #8a6b2f; border-radius: 0 0 8px 8px;
-}
-.stamp.slammed { transform: translateY(6px) scale(.94); }
-.citation {
-  position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%);
-  width: min(86%, 360px); background: #fdf2e3; border: 2.5px solid var(--red);
-  border-radius: 13px; padding: 14px; text-align: center; z-index: 8;
-  box-shadow: 0 8px 22px rgba(0,0,0,.28); animation: slam .25s ease-out;
-}
-.citation-head { font-weight: 900; color: var(--red); margin-bottom: 6px; }
-.citation p { font-size: .85rem; font-weight: 700; line-height: 1.5; margin-bottom: 10px; }
-.icard.tapable { cursor: pointer; }
 
 
-/* ── v1 검사 전표 + 잉크 도장 ── */
-:root { --red-deep: #b8433a; }
-.verdict-slip {
-  position: absolute; right: 3%; bottom: 12%;
-  width: clamp(112px, 16vw, 152px); height: clamp(72px, 10vw, 96px);
-  background: var(--paper); border-radius: 6px;
-  box-shadow: 0 8px 18px rgba(46,57,71,.25);
-  transform: rotate(2deg); display: flex; align-items: center; justify-content: center;
-  font-size: .74rem; font-weight: 700; color: #b9b2a2; z-index: 4;
-}
-.ink {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 900; transform: rotate(-14deg);
-}
-.ink span {
-  border: 5px solid currentColor; border-radius: 10px; padding: 2px 14px; letter-spacing: .1em;
-  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='60'><filter id='n'><feTurbulence baseFrequency='0.7' numOctaves='2'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.82 0.18'/></filter><rect width='120' height='60' filter='url(%23n)'/></svg>");
-  mask-size: cover; -webkit-mask-size: cover;
-}
-.ink.pass { color: var(--green-deep); }
-.ink.deny { color: var(--red-deep); }
-.ink.slam { animation: inkSlam .28s cubic-bezier(.3,1.6,.4,1) both; }
-@keyframes inkSlam {
-  0% { opacity: 0; transform: rotate(-14deg) scale(2.1); }
-  60% { opacity: 1; transform: rotate(-14deg) scale(.92); }
-  100% { transform: rotate(-14deg) scale(1); }
-}
+
