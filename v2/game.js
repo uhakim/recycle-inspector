@@ -268,35 +268,46 @@ document.querySelectorAll(".cat-btn").forEach((b) =>
 $("teachCancel").addEventListener("click", () => { teaching = null; $("teach").classList.add("hidden"); });
 
 /* ── 오리엔테이션 ── */
+let orientTaught = 0;
+function orientPolicyStep() {
+  $("orientTeach").classList.add("hidden");
+  $("orientPolicy").classList.remove("hidden");
+  renderPolicyRow($("orientPolicyRow"), () => { $("orientGo").disabled = !brain.policy; });
+  $("orientGo").disabled = !brain.policy;
+  Sound.robo(5);
+}
 function openOrient() {
   Sound.ready();
+  orientTaught = 0;
   $("orientAvatar").innerHTML = AI_SVG;
-  const candidates = Object.keys(ITEMS).filter((id) => itemOf(id).stage === 1)
+  // 이전 버전 데이터로 이미 3개 이상 외운 상태면 가르치기를 건너뛰고 방침으로
+  if (Object.keys(brain.reg).length >= 3) {
+    $("orient").classList.remove("hidden");
+    orientPolicyStep();
+    return;
+  }
+  const candidates = Object.keys(ITEMS)
+    .filter((id) => itemOf(id).stage === 1 && !brain.reg[id])
     .sort(() => Math.random() - 0.5).slice(0, 6);
   $("orientGrid").innerHTML = candidates.map((id) =>
     `<button class="orient-item" data-o="${id}">${ITEM_PLACEHOLDER}${itemOf(id).name}</button>`).join("");
   document.querySelectorAll("[data-o]").forEach((btn) =>
     btn.addEventListener("click", () => {
-      if (brain.reg[btn.dataset.o] || Object.keys(brain.reg).length >= 3) return;
+      if (brain.reg[btn.dataset.o] || orientTaught >= 3) return;
       openTeach(btn.dataset.o, "orient");
     }));
   $("orient").classList.remove("hidden");
   Sound.robo(6);
 }
 function orientAfterTeach(itemId) {
-  const cnt = Object.keys(brain.reg).length;
+  orientTaught += 1;
+  const cnt = orientTaught;
   $("orientCnt").textContent = cnt;
   const btn = document.querySelector(`[data-o="${itemId}"]`);
   if (btn) { btn.classList.add("taught"); btn.disabled = true; }
   if (cnt >= 3) {
     document.querySelectorAll("[data-o]").forEach((b) => (b.disabled = true));
-    setTimeout(() => {
-      $("orientTeach").classList.add("hidden");
-      $("orientPolicy").classList.remove("hidden");
-      renderPolicyRow($("orientPolicyRow"), () => { $("orientGo").disabled = !brain.policy; });
-      $("orientGo").disabled = !brain.policy;
-      Sound.robo(5);
-    }, 550);
+    setTimeout(orientPolicyStep, 550);
   }
 }
 $("orientGo").addEventListener("click", () => {
