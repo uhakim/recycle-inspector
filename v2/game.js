@@ -84,7 +84,9 @@ async function playChallenge() {
   $("work").classList.remove("hidden");
   $("noticeCat").textContent = CATS[todayCat];
   $("bagTotal").textContent = result.bags.length;
-  $("scoreChip").classList.add("hidden");
+  $("scoreChip").classList.remove("hidden");
+  $("okCnt").textContent = 0; $("badCnt").textContent = 0;
+  let liveOk = 0, liveBad = 0;
   $("speedBtn").classList.remove("hidden");
   $("skipBtn").classList.remove("hidden");
   document.querySelector(".ai-zone").classList.remove("hidden");
@@ -101,6 +103,7 @@ async function playChallenge() {
     $("bagNo").textContent = b + 1;
     $("itemRow").innerHTML = "";
     $("verdict").classList.add("hidden");
+    $("judge").classList.add("hidden");
     $("aiSpeech").classList.add("hidden");
 
     // 주민 등장
@@ -172,7 +175,15 @@ async function playChallenge() {
       $("verdict").className = `ink ${bag.aiPass ? "pass" : "deny"} slam`;
       $("verdictText").textContent = bag.aiPass ? "통과" : "반려";
       $("verdict").classList.remove("hidden");
-      await wait(750);
+      await wait(650);
+      // 정오 즉시 피드백 (v1 방식): ⭕/❌ + 효과음 + 카운터
+      if (bag.correct) { liveOk += 1; Sound.good(); $("judge").textContent = "⭕"; }
+      else { liveBad += 1; Sound.bad(); $("judge").textContent = "❌"; }
+      $("okCnt").textContent = liveOk; $("badCnt").textContent = liveBad;
+      $("judge").classList.remove("hidden");
+      void $("judge").offsetWidth;
+      await wait(820);
+      $("judge").classList.add("hidden");
       const p = document.querySelector(".person");
       if (p) p.classList.add("leave");
       await wait(420);
