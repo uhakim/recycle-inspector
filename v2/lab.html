@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>분리수거 검사관 v2 — 엔진 확인용</title>
+<style>
+  :root { --ink:#2e3947; --paper:#fffdf4; --green:#2f9e6e; --red:#e05a4e; --sub:#6b7686; --line:#d8cfc0; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    background:#cfe6de; color:var(--ink); padding:14px; }
+  h1 { font-size:1.15rem; margin-bottom:2px; }
+  .note { font-size:.8rem; color:var(--sub); margin-bottom:12px; }
+  section { background:var(--paper); border:2px solid var(--ink); border-radius:12px; padding:12px; margin-bottom:12px; }
+  h2 { font-size:.95rem; margin-bottom:8px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { border:1.5px solid var(--line); border-radius:999px; padding:5px 10px; font-size:.82rem;
+    background:#fff; font-weight:700; cursor:pointer; }
+  .chip.sel { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+  select, button.act { font-family:inherit; font-size:.85rem; font-weight:700; padding:7px 10px;
+    border:2px solid var(--ink); border-radius:9px; background:#fff; }
+  button.act { background:var(--green); color:#fff; border-color:var(--green); cursor:pointer; }
+  button.act.gray { background:#fff; color:var(--ink); border-color:var(--ink); }
+  .rule { display:flex; justify-content:space-between; align-items:center; gap:6px;
+    border:1.5px dashed var(--line); border-radius:9px; padding:6px 9px; margin-top:6px; font-size:.84rem; font-weight:700; }
+  .rule small { color:var(--sub); font-weight:600; }
+  .del { border:none; background:none; font-size:1rem; cursor:pointer; color:var(--red); font-weight:900; }
+  .items { max-height:260px; overflow-y:auto; border:1.5px solid var(--line); border-radius:9px; margin-top:8px; }
+  .it { display:flex; justify-content:space-between; align-items:center; gap:6px; padding:6px 9px;
+    border-bottom:1px solid #eee7d8; font-size:.83rem; }
+  .it b { font-weight:800; }
+  .it .fe { color:var(--sub); font-size:.76rem; }
+  .it select { padding:3px 5px; font-size:.78rem; border-width:1.5px; }
+  .stat { font-size:.85rem; line-height:1.55; margin-top:8px; }
+  .big { font-size:1.6rem; font-weight:900; color:var(--green); }
+  .miss { color:var(--red); }
+  .tag { display:inline-block; background:#eef2f6; border-radius:7px; padding:1px 7px; font-size:.76rem; font-weight:800; margin:1px; }
+  .cnt { font-size:.78rem; color:var(--sub); font-weight:700; }
+</style>
+</head>
+<body>
+<h1>🔧 분리수거 검사관 v2 — 엔진 확인용</h1>
+<p class="note">1단계(데이터+판정 엔진) 검증 페이지입니다. 게임 화면이 아니라 <b>재활용이의 뇌를 직접 만지는 실험대</b>예요. 등록·규칙·방침을 바꾸고 도전을 돌려 점수 변화를 확인해 보세요.</p>
+
+<section>
+  <h2>1) 물품 등록 <span class="cnt" id="regCnt"></span></h2>
+  <div class="row">
+    <label class="cnt">단계 필터</label>
+    <select id="stageFilter">
+      <option value="1">1단계(20종)</option><option value="2">~2단계(45종)</option>
+      <option value="3">~3단계(72종)</option><option value="4" selected>전체(100종)</option>
+    </select>
+  </div>
+  <div class="items" id="itemList"></div>
+</section>
+
+<section>
+  <h2>2) 특징 규칙 만들기 <span class="cnt" id="slotCnt"></span></h2>
+  <div class="chips" id="featChips"></div>
+  <div class="row">
+    → <select id="ruleCat"></select>
+    <button class="act" id="addRule">규칙 추가</button>
+  </div>
+  <div id="ruleList"></div>
+</section>
+
+<section>
+  <h2>3) 방침 — 모르는 물건이 나오면?</h2>
+  <div class="chips" id="policyChips"></div>
+</section>
+
+<section>
+  <h2>4) 도전!</h2>
+  <div class="row">
+    <label class="cnt">오늘의 배출일</label><select id="todaySel"></select>
+  </div>
+  <div class="row">
+    <button class="act gray" id="run1">도전 1 (대본: 등록한 것만)</button>
+    <button class="act gray" id="run2">도전 2 (반대본: 등록+신규)</button>
+    <button class="act" id="runFree">무한 도전 (전체 100종)</button>
+  </div>
+  <div class="stat" id="result">아직 도전 전이에요.</div>
+</section>
+
+<section>
+  <h2>📈 시도 기록</h2>
+  <div class="stat" id="history">—</div>
+</section>
+
+<script type="module">
+import { CATS, FEATURES, ITEMS, RULE_SLOTS } from "./data.js";
+import { emptyBrain, addRule, removeRule, runChallenge, itemOf,
+         poolTutorial1, makeTutorial2Bags, poolFree, makeBags } from "./engine.js";
+
+const $ = (id) => document.getElementById(id);
+const brain = emptyBrain(); brain.policy = "guess";
+let selFeats = [];
+const history = [];
+
+const catOptions = (withNone) =>
+  (withNone ? `<option value="">미등록</option>` : "") +
+  Object.keys(CATS).map((c) => `<option value="${c}">${CATS[c]}</option>`).join("");
+
+function renderItems() {
+  const max = Number($("stageFilter").value);
+  const list = Object.keys(ITEMS).filter((id) => itemOf(id).stage <= max);
+  $("itemList").innerHTML = list.map((id) => {
+    const it = itemOf(id);
+    const fe = it.feats.map((f) => FEATURES[f].icon).join("");
+    return `<div class="it"><span><b>${it.name}</b> <span class="fe">${fe}</span></span>
+      <select data-reg="${id}">${catOptions(true)}</select></div>`;
+  }).join("");
+  list.forEach((id) => {
+    const sel = document.querySelector(`[data-reg="${id}"]`);
+    sel.value = brain.reg[id] || "";
+    sel.addEventListener("change", () => {
+      if (sel.value) brain.reg[id] = sel.value; else delete brain.reg[id];
+      $("regCnt").textContent = `등록 ${Object.keys(brain.reg).length}개`;
+    });
+  });
+  $("regCnt").textContent = `등록 ${Object.keys(brain.reg).length}개`;
+}
+
+function renderFeats() {
+  $("featChips").innerHTML = Object.keys(FEATURES).map((f) =>
+    `<span class="chip ${selFeats.includes(f) ? "sel" : ""}" data-f="${f}">${FEATURES[f].icon} ${FEATURES[f].name}</span>`).join("");
+  document.querySelectorAll("[data-f]").forEach((ch) =>
+    ch.addEventListener("click", () => {
+      const f = ch.dataset.f;
+      selFeats = selFeats.includes(f) ? selFeats.filter((x) => x !== f)
+        : selFeats.length < 3 ? [...selFeats, f] : selFeats;
+      renderFeats();
+    }));
+}
+
+function renderRules() {
+  $("slotCnt").textContent = `슬롯 ${brain.rules.length}/${RULE_SLOTS}`;
+  $("ruleList").innerHTML = brain.rules.map((r, i) =>
+    `<div class="rule"><span>📐 ${r.feats.map((f) => FEATURES[f].name).join(" + ")} → <b>${CATS[r.cat]}</b>
+     <small id="rs${i}"></small></span><button class="del" data-i="${i}">×</button></div>`).join("")
+    || `<div class="cnt" style="margin-top:6px">아직 규칙이 없어요.</div>`;
+  document.querySelectorAll(".del").forEach((b) =>
+    b.addEventListener("click", () => { removeRule(brain, Number(b.dataset.i)); renderRules(); }));
+}
+
+function renderPolicy() {
+  const P = { pass: "🙂 일단 통과", deny: "🛑 일단 반려", guess: "🎲 찍어볼게" };
+  $("policyChips").innerHTML = Object.keys(P).map((k) =>
+    `<span class="chip ${brain.policy === k ? "sel" : ""}" data-p="${k}">${P[k]}</span>`).join("");
+  document.querySelectorAll("[data-p]").forEach((ch) =>
+    ch.addEventListener("click", () => { brain.policy = ch.dataset.p; renderPolicy(); }));
+}
+
+function show(res, label) {
+  const srcName = { reg: "등록", rule: "규칙", "policy-pass": "방침", "policy-deny": "방침", "policy-guess": "찍기" };
+  const misses = res.perItem.filter((p) => !p.correct);
+  $("result").innerHTML = `
+    <div><span class="big">${res.score}점</span> <span class="cnt">(${label} · 물건 ${res.perItem.length}개 · 봉투 정확도 ${Math.round(res.bagAcc * 100)}%)</span></div>
+    <div>등록으로 맞힘 ${res.regHits} · 규칙으로 맞힘 ${res.ruleStats.reduce((a, s) => a + s.hits, 0)} · 규칙 충돌 ${res.conflictCount}회</div>
+    <div style="margin-top:4px">${misses.length ? "❌ 틀린 것: " + misses.slice(0, 12).map((m) =>
+      `<span class="tag miss">${itemOf(m.id).name}(${m.cat === "reject" ? "반려" : CATS[m.cat] || "?"}→${CATS[m.truth]})</span>`).join("") : "✨ 하나도 안 틀렸어요!"}</div>`;
+  brain.rules.forEach((r, i) => {
+    const el = $("rs" + i);
+    if (el) el.textContent = ` (${res.ruleStats[i].hits}맞힘/${res.ruleStats[i].misses}틀림)`;
+  });
+  history.push({ n: history.length + 1, score: res.score, label,
+    rules: brain.rules.length, reg: Object.keys(brain.reg).length, policy: brain.policy });
+  const best = Math.max(...history.map((h) => h.score));
+  $("history").innerHTML = history.map((h) =>
+    `<span class="tag" ${h.score === best ? 'style="background:var(--green);color:#fff"' : ""}>` +
+    `${h.n}회 ${h.score}점 <small>(등록${h.reg}·규칙${h.rules})</small></span>`).join(" ");
+}
+
+function today() { return $("todaySel").value; }
+
+$("run1").addEventListener("click", () => {
+  const pool = poolTutorial1(brain);
+  if (!pool.length) { $("result").textContent = "먼저 물품을 등록해 주세요! (도전 1은 등록한 것만 나와요)"; return; }
+  show(runChallenge(makeBags(pool, today(), 5), brain, today()), "도전 1");
+});
+$("run2").addEventListener("click", () => {
+  if (!Object.keys(brain.reg).length) { $("result").textContent = "먼저 물품을 등록해 주세요!"; return; }
+  const curated = Object.keys(ITEMS).filter((id) =>
+    !brain.reg[id] && itemOf(id).stage <= 2 && itemOf(id).cat !== today()).slice(0, 8);
+  show(runChallenge(makeTutorial2Bags(brain, curated, 5), brain, today()), "도전 2");
+});
+$("runFree").addEventListener("click", () =>
+  show(runChallenge(makeBags(poolFree(4), today(), 8), brain, today()), "무한 도전"));
+
+$("ruleCat").innerHTML = catOptions(false);
+$("todaySel").innerHTML = catOptions(false);
+$("addRule").addEventListener("click", () => {
+  if (!selFeats.length) return;
+  const r = addRule(brain, selFeats, $("ruleCat").value);
+  if (!r.ok) alert(r.reason === "slots" ? `규칙은 ${RULE_SLOTS}개까지! (재활용이 머리 용량)` : "이미 같은 특징 조합의 규칙이 있어요");
+  selFeats = []; renderFeats(); renderRules();
+});
+$("stageFilter").addEventListener("change", renderItems);
+
+renderItems(); renderFeats(); renderRules(); renderPolicy();
+</script>
+</body>
+</html>
