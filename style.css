@@ -547,3 +547,65 @@ body {
 }
 .next-day:active { box-shadow: 0 2px 0 #c2620a; }
 .next-day.pulse { animation: bob 0.9s ease-in-out infinite; }
+
+/* ═══════════ 오늘의 훈련 카드 ═══════════ */
+
+.train-card-btn {
+  display: block; margin: 12px auto 2px;
+  padding: 10px 22px; border: 2.5px dashed var(--ink); border-radius: 12px;
+  background: var(--paper); color: var(--ink);
+  font-family: inherit; font-size: 1rem; font-weight: 800; cursor: pointer;
+  box-shadow: 3px 3px 0 rgba(46, 57, 71, 0.16);
+  transition: transform 0.1s;
+}
+.train-card-btn:active { transform: translate(2px, 2px); box-shadow: none; }
+
+.train-card-wrap { max-width: 560px; padding: 18px 18px 14px; }
+.train-card {
+  background: var(--paper);
+  border: 2.5px solid var(--ink); border-radius: 14px;
+  padding: 16px 18px 12px;
+  margin-bottom: 12px;
+  text-align: left;
+  box-shadow: 5px 5px 0 rgba(46, 57, 71, 0.12);
+}
+.tc-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  border-bottom: 2.5px dashed var(--desk-deep); padding-bottom: 8px;
+}
+.tc-title { font-size: 1.2rem; font-weight: 900; }
+.tc-day {
+  font-size: 0.82rem; font-weight: 800; color: var(--green-deep);
+  border: 2px solid var(--green); border-radius: 999px; padding: 3px 10px;
+  background: #eaf6f0; white-space: nowrap;
+}
+.tc-sub { font-size: 0.85rem; font-weight: 700; color: var(--sub); margin: 7px 0 4px; }
+.tc-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 8px 0; border-bottom: 1.5px dotted #d8cfc0;
+}
+.tc-row.col { flex-direction: column; align-items: stretch; gap: 6px; }
+.tc-row:last-of-type { border-bottom: none; }
+.tc-label { font-size: 0.85rem; font-weight: 800; color: var(--sub); white-space: nowrap; }
+.tc-value { font-size: 0.92rem; font-weight: 700; text-align: right; }
+.tc-row.col .tc-value { text-align: left; display: flex; flex-wrap: wrap; gap: 5px; }
+.tc-big { font-size: 1.45rem; font-weight: 900; color: var(--green-deep); }
+.tc-chip {
+  display: inline-block; background: #f3ecdd; border: 1.5px solid var(--desk-deep);
+  border-radius: 8px; padding: 3px 8px; font-size: 0.82rem; font-weight: 700;
+}
+.tc-chip b { color: var(--green-deep); }
+.tc-ex { color: var(--red-deep); font-style: normal; font-size: 0.78rem; }
+.tc-none { color: var(--sub); font-size: 0.84rem; font-weight: 600; }
+.tc-hist { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; justify-content: flex-end; }
+.tc-acc {
+  background: #eef2f6; border-radius: 8px; padding: 2px 8px;
+  font-size: 0.84rem; font-weight: 800; color: var(--sub);
+}
+.tc-acc.latest { background: var(--green); color: #fff; }
+.tc-arrow { color: var(--sub); font-weight: 800; }
+.tc-note {
+  margin-top: 10px; padding: 8px 10px; border-radius: 10px;
+  background: #fff3dd; border: 2px dashed var(--accent);
+  font-size: 0.88rem; font-weight: 800; text-align: center; color: #8a6b2f;
+}

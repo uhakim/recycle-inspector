@@ -161,6 +161,7 @@
         <div class="ai-stats-row"><span>🤖 재활용이 정확도 기록</span><span id="statAi" class="ai-history"></span></div>
       </div>
       <div id="endCitations" class="end-citations"></div>
+      <button id="trainCardBtn" class="train-card-btn">📋 오늘의 훈련 카드 보기</button>
       <button id="nextDayBtn" class="big-button next-day hidden">▶ 다음 일차로 넘어가기</button>
       <div class="end-actions">
         <button id="homeBtn" class="big-button ghost">🏠 처음으로</button>
@@ -220,6 +221,14 @@
       <div class="nb-policy-title">🧭 재활용이의 방침 — 모르는 물건이 나오면?</div>
       <div id="notebookPolicy" class="policy-cards small"></div>
       <button id="notebookClose" class="small-button">덮기</button>
+    </div>
+  </div>
+
+  <!-- 오늘의 훈련 카드 -->
+  <div id="trainCardOverlay" class="notebook-overlay hidden">
+    <div class="notebook-card train-card-wrap">
+      <div id="trainCard" class="train-card"></div>
+      <button id="trainCardClose" class="small-button">닫기</button>
     </div>
   </div>
 

@@ -399,6 +399,7 @@ const S = {
   aiTimers: [],
   fixedThisBag: new Set(),
   taughtRecently: new Set(),  // 콜백 연출용: 최근 가르친 물건
+  taughtThisShift: new Set(), // 훈련 카드용: 이번 근무(오리엔테이션 포함)에 가르친 물건
   learnedThisShift: 0,
   orientBudget: 0,
 };
@@ -423,6 +424,7 @@ const el = {};
  "orientPolicyCards","orientStart","notebookPolicy","resetBtn","daySelect","notebookRules",
  "homeBtn","nextDayBtn",
  "hypoOverlay","hypoAvatar","hypoText","hypoYes","hypoNo",
+ "trainCardBtn","trainCardOverlay","trainCard","trainCardClose",
 ].forEach((id) => (el[id] = $(id)));
 
 /* ---------- 흐름 ---------- */
@@ -709,6 +711,7 @@ function teachCategory(cat) {
   S.notebook[itemId] = cat;
   saveNotebook();
   S.taughtRecently.add(itemId);
+  S.taughtThisShift.add(itemId);
   if (isNew) S.learnedThisShift += 1;
   Sound.learn();
   el.catPicker.classList.add("hidden");
@@ -1135,6 +1138,59 @@ function endDay() {
   }
 }
 
+/* ---------- 오늘의 훈련 카드 ---------- */
+
+function renderTrainCard() {
+  const total = S.ok + S.bad;
+  const acc = total ? Math.round((S.ok / total) * 100) : 0;
+  const dayCfg = DAYS[S.day.num || S.records.day || 1] || DAYS[1];
+  const isAi = S.mode === "ai";
+  const round = S.records.aiHistory.length;
+
+  const taught = [...S.taughtThisShift].filter((id) => ITEMS[id] && S.notebook[id]);
+  const taughtHtml = taught.length
+    ? taught.map((id) => `<span class="tc-chip">${ITEMS[id].name} → <b>${CATS[S.notebook[id]]}</b></span>`).join("")
+    : `<span class="tc-none">오늘은 새로 가르친 게 없어요</span>`;
+
+  const rules = S.records.rules || [];
+  const rulesHtml = rules.length
+    ? rules.map((r) => {
+        const ex = Object.keys(S.notebook)
+          .filter((id) => ITEMS[id] && r.feats.every((f) => (ITEMS[id].feat || []).includes(f)) && S.notebook[id] !== r.cat)
+          .map((id) => ITEMS[id].name);
+        return `<span class="tc-chip">📐 ${r.label} → <b>${CATS[r.cat]}</b>${ex.length ? ` <i class="tc-ex">(⚠ ${ex.join(", ")} 빼고!)</i>` : ""}</span>`;
+      }).join("")
+    : `<span class="tc-none">아직 없어요</span>`;
+
+  const pol = POLICIES[S.records.policy];
+  const history = S.records.aiHistory;
+  const histHtml = history.length
+    ? history.map((a, i) => `<span class="tc-acc ${i === history.length - 1 ? "latest" : ""}">${a}%</span>`)
+        .join(`<span class="tc-arrow">→</span>`)
+    : `<span class="tc-none">아직 없어요</span>`;
+
+  el.trainCard.innerHTML = `
+    <div class="tc-head">
+      <span class="tc-title">📋 오늘의 훈련 카드</span>
+      <span class="tc-day">${dayCfg.label}</span>
+    </div>
+    <div class="tc-sub">${isAi ? `🤖 재활용이 근무 · ${round}회차` : "🧑 내가 검사관"}</div>
+    <div class="tc-row"><span class="tc-label">검사 정확도</span>
+      <span class="tc-value"><b class="tc-big">${acc}%</b>&nbsp; (✅ ${S.ok} · ❌ ${S.bad})</span></div>
+    <div class="tc-row"><span class="tc-label">📈 재활용이 성장</span><span class="tc-value tc-hist">${histHtml}</span></div>
+    <div class="tc-row col"><span class="tc-label">📒 오늘 가르친 것 (${taught.length}개)</span>
+      <span class="tc-value">${taughtHtml}</span></div>
+    <div class="tc-row col"><span class="tc-label">📐 우리가 만든 규칙</span><span class="tc-value">${rulesHtml}</span></div>
+    <div class="tc-row"><span class="tc-label">🧭 방침</span>
+      <span class="tc-value">${pol ? `${pol.emoji} ${pol.title}` : "아직 안 정했어요"}</span></div>
+    <div class="tc-row"><span class="tc-label">📒 수첩 현황</span>
+      <span class="tc-value">${Object.keys(S.notebook).length}개 / ${Object.keys(ITEMS).length}개 배움</span></div>
+    <div class="tc-note">✏️ 이 카드를 활동지에 옮겨 적어 보세요!</div>`;
+}
+
+// 새 근무를 시작할 때 훈련 카드의 "오늘" 범위를 비운다 (오리엔테이션보다 먼저)
+function resetShiftLog() { S.taughtThisShift = new Set(); }
+
 /* ---------- 유틸 ---------- */
 
 function setStamps(enabled) {
@@ -1171,9 +1227,10 @@ function renderStartRecords() {
   el.startRecords.textContent = parts.join("  ·  ");
 }
 
-el.startHumanBtn.addEventListener("click", () => { Sound.ready(); startDay("human"); });
+el.startHumanBtn.addEventListener("click", () => { Sound.ready(); resetShiftLog(); startDay("human"); });
 el.startAiBtn.addEventListener("click", () => {
   Sound.ready();
+  resetShiftLog();
   if (Object.keys(S.notebook).length === 0) openOrientation();
   else startDay("ai");
 });
@@ -1218,8 +1275,15 @@ el.nextDayBtn.addEventListener("click", () => {
   }
   goHome();
 });
-el.retryBtn.addEventListener("click", () => startDay("human"));
-el.nextBtn.addEventListener("click", () => startDay("ai"));
+el.retryBtn.addEventListener("click", () => { resetShiftLog(); startDay("human"); });
+el.nextBtn.addEventListener("click", () => { resetShiftLog(); startDay("ai"); });
+el.trainCardBtn.addEventListener("click", () => {
+  Sound.paper();
+  renderTrainCard();
+  el.trainCardOverlay.classList.remove("hidden");
+});
+el.trainCardClose.addEventListener("click", () => el.trainCardOverlay.classList.add("hidden"));
+el.trainCardOverlay.addEventListener("click", (e) => { if (e.target === el.trainCardOverlay) el.trainCardOverlay.classList.add("hidden"); });
 el.interveneBtn.addEventListener("click", intervene);
 el.reviewDone.addEventListener("click", finishReview);
 document.querySelectorAll(".cat-btn").forEach((btn) =>
