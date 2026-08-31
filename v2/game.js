@@ -264,7 +264,6 @@ function renderHistory() {
       if (d.added.length) parts.push(`<span class="diff-add">+ 규칙 ${d.added.map(ruleLabel).join(", ")}</span>`);
       if (d.removed.length) parts.push(`<span class="diff-del">− 규칙 ${d.removed.map(ruleLabel).join(", ")}</span>`);
       if (d.newReg > 0) parts.push(`<span class="diff-add">+ 새로 외움 ${d.newReg}개</span>`);
-      if (d.policyChanged) parts.push(`방침 변경 → ${({pass:"일단 통과",deny:"일단 반려",guess:"찍어볼게"})[h.policy]}`);
       if (!parts.length) parts.push("바꾼 것 없이 재도전");
     }
     const prevScore = histSel > 0 ? history[histSel - 1].score : null;
@@ -273,7 +272,7 @@ function renderHistory() {
     diffHtml = `🔧 이번에 바꾼 것: ${parts.join(" · ")}${delta}`;
   }
   $("histDetail").innerHTML = `
-    <b>${h.n}회차 — ${h.score}점</b>${h.phase !== "free" ? ' <span class="cnt">🎓튜토리얼</span>' : ""} <span class="cnt">(${CATS[h.today] || ""} 날 · 방침 ${({pass:"🙂통과",deny:"🛑반려",guess:"🎲찍기"})[h.policy] || "-"})</span><br/>
+    <b>${h.n}회차 — ${h.score}점</b>${h.phase !== "free" ? ' <span class="cnt">🎓튜토리얼</span>' : ""} <span class="cnt">(${CATS[h.today] || ""} 날)</span><br/>
     📒 외운 것 ${h.reg}개 · 📐 규칙 ${h.rulesSnap ? h.rulesSnap.length : h.rules}개
     ${h.rulesSnap && h.rulesSnap.length ? "<br/>" + h.rulesSnap.map((r) => `<span class="hchip">📐${ruleLabel(r)}</span>`).join(" ") : ""}
     ${diffHtml ? "<br/>" + diffHtml : ""}`;
@@ -283,7 +282,7 @@ function renderHistory() {
   const bestChange = bd && !bd.first
     ? (bd.added.length ? `규칙 [${bd.added.map(ruleLabel).join(", ")}]을 만들었을 때` :
        bd.newReg > 0 ? `${bd.newReg}개를 새로 가르쳤을 때` :
-       bd.policyChanged ? "방침을 바꿨을 때" : "그대로 다시 했을 때")
+       "그대로 다시 했을 때")
     : "처음 가르친 것으로";
   $("reflectCard").innerHTML = (freeIdxs.length ? "" : "🎓 아직 튜토리얼 기록뿐이에요 — 자유 도전을 해보세요!<br/>") +
     `✏️ <b>생각해 보기</b> — 최고 기록은 <b>${bestIdx + 1}회차 ${best}점</b>, ${bestChange} 나왔어요.<br/>` +
@@ -675,7 +674,6 @@ function openNotebook() {
   $("tabFeats").classList.toggle("locked", locked);
   $("tabFeats").textContent = locked ? "🔒 규칙" : "📐 규칙";
   if (!locked) renderFeatsPane();
-  renderPolicyRow($("policyRow"));
   switchTab(true);
   $("nbOverlay").classList.remove("hidden");
 }
