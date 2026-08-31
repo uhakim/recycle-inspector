@@ -92,12 +92,30 @@ function renderWrongList() {
     }));
 }
 
+/* ── 속성 확인 팝업 (눌렀을 때만 — 학습과 분리) ── */
+function attrChips(itemId) {
+  return itemOf(itemId).feats.map((f) =>
+    `<span class="chip">${FEATURES[f].icon} ${FEATURES[f].name}</span>`).join("");
+}
+function openInspect(itemId) {
+  $("inspectName").textContent = itemOf(itemId).name;
+  $("inspectCat").textContent = brain.reg[itemId]
+    ? `수첩에 "${CATS[brain.reg[itemId]]}"로 적혀 있어요` : "아직 수첩에 없는 물건이에요";
+  $("inspectAttrs").innerHTML = attrChips(itemId);
+  $("inspect").classList.remove("hidden");
+}
+$("inspectClose").addEventListener("click", () => $("inspect").classList.add("hidden"));
+$("inspect").addEventListener("click", (e) => { if (e.target === $("inspect")) $("inspect").classList.add("hidden"); });
+
 /* ── 가르치기: 분류만 (한 탭이면 끝 — 특징은 규칙 만들 때만 등장) ── */
 function openTeach(itemId) {
   teaching = { itemId };
   $("teachName").textContent = itemOf(itemId).name;
+  $("teachAttrs").classList.add("hidden");
+  $("teachAttrs").innerHTML = attrChips(itemId);
   $("teach").classList.remove("hidden");
 }
+$("teachInspect").addEventListener("click", () => $("teachAttrs").classList.toggle("hidden"));
 document.querySelectorAll(".cat-btn").forEach((b) =>
   b.addEventListener("click", () => {
     if (!teaching) return;
@@ -115,10 +133,12 @@ function renderItemsPane() {
   $("itemCols").innerHTML = Object.keys(CATS).map((cat) => {
     const chips = Object.keys(brain.reg)
       .filter((id) => brain.reg[id] === cat && ITEMS[id])
-      .map((id) => `<div class="ichip">${itemOf(id).name}</div>`)
+      .map((id) => `<div class="ichip" data-insp="${id}">${itemOf(id).name}</div>`)
       .join("") || `<div class="none">아직 없음</div>`;
     return `<div class="icol"><span class="icol-title c-${cat}">${CATS[cat]}</span>${chips}</div>`;
   }).join("");
+  document.querySelectorAll("[data-insp]").forEach((c) =>
+    c.addEventListener("click", () => openInspect(c.dataset.insp)));
   const unknown = Object.keys(ITEMS).filter((id) => !brain.reg[id]).length;
   $("mysteryRow").innerHTML = unknown
     ? Array.from({ length: unknown }, () => `<span class="mq">?</span>`).join("")

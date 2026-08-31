@@ -88,10 +88,22 @@
     </div>
   </div>
 
-  <!-- ══════ 가르치기 모달 (분류 → 특징 근거) ══════ -->
+  <!-- ══════ 속성 확인 팝업 ══════ -->
+  <div id="inspect" class="overlay hidden">
+    <div class="teach-card">
+      <div id="inspectName" class="teach-name"></div>
+      <div id="inspectCat" class="sub"></div>
+      <div id="inspectAttrs" class="chips ro"></div>
+      <button id="inspectClose" class="small ghost">닫기</button>
+    </div>
+  </div>
+
+  <!-- ══════ 가르치기 모달 ══════ -->
   <div id="teach" class="overlay hidden">
     <div class="teach-card">
       <div id="teachName" class="teach-name"></div>
+      <button id="teachInspect" class="inspect-toggle">🔍 속성 보기</button>
+      <div id="teachAttrs" class="chips ro hidden"></div>
       <p class="sub">이건 무엇으로 가르쳐줄까요?</p>
       <div class="cat-btns">
         <button data-cat="paper" class="cat-btn c-paper">종이류</button>

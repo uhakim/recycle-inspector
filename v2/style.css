@@ -141,3 +141,11 @@ select {
 .cat-btn.c-trash { grid-column: 1 / -1; }
 #teachFeats { justify-content: center; margin-bottom: 12px; }
 #teachFeats .chip { font-size: .88rem; padding: 8px 12px; }
+.chips.ro { justify-content: center; margin: 8px 0; }
+.chips.ro .chip { cursor: default; background: #f3ecdd; border-color: var(--line); }
+.inspect-toggle {
+  font-family: inherit; font-size: .78rem; font-weight: 700; color: var(--sub);
+  border: 1.5px dashed var(--line); border-radius: 999px; padding: 4px 10px;
+  background: none; cursor: pointer; margin-bottom: 6px;
+}
+.ichip { cursor: pointer; text-decoration: underline dotted var(--line); text-underline-offset: 3px; }
