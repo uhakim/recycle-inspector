@@ -514,21 +514,16 @@ $("teachCancel").addEventListener("click", () => { teaching = null; $("teach").c
 
 /* ── 오리엔테이션 ── */
 let orientTaught = 0;
-function orientPolicyStep() {
-  $("orientTeach").classList.add("hidden");
-  $("orientPolicy").classList.remove("hidden");
-  renderPolicyRow($("orientPolicyRow"), () => { $("orientGo").classList.add("ready"); });
-  $("orientGo").classList.toggle("ready", !!brain.policy);
-  Sound.robo(5);
-}
 function openOrient() {
   Sound.ready();
   orientTaught = 0;
   $("orientAvatar").innerHTML = AI_SVG;
-  // 이전 버전 데이터로 이미 3개 이상 외운 상태면 가르치기를 건너뛰고 방침으로
+  $("orientGo").classList.add("hidden");
+  // 이전 버전 데이터로 이미 3개 이상 외운 상태면 바로 출근 가능
   if (Object.keys(brain.reg).length >= 3) {
     $("orient").classList.remove("hidden");
-    orientPolicyStep();
+    $("orientTeach").classList.add("hidden");
+    $("orientGo").classList.remove("hidden");
     return;
   }
   const candidates = Object.keys(ITEMS)
@@ -552,14 +547,11 @@ function orientAfterTeach(itemId) {
   if (btn) { btn.classList.add("taught"); btn.disabled = true; }
   if (cnt >= 3) {
     document.querySelectorAll("[data-o]").forEach((b) => (b.disabled = true));
-    setTimeout(orientPolicyStep, 550);
+    setTimeout(() => { $("orientGo").classList.remove("hidden"); Sound.robo(4); }, 550);
   }
 }
 $("orientGo").addEventListener("click", () => {
-  if (!brain.policy) {
-    aiAlert("잠깐만요! 모르는 물건이 나오면 어떻게 할지, 위에서 방침을 하나 골라주세요!");
-    return;
-  }
+  if (!brain.policy) brain.policy = "guess"; // 기본 방침: 동전 던지기 (수첩에서 변경 가능)
   $("orient").classList.add("hidden");
   phase = "c1"; save();
   playChallenge();
