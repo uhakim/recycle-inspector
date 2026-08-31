@@ -517,8 +517,8 @@ let orientTaught = 0;
 function orientPolicyStep() {
   $("orientTeach").classList.add("hidden");
   $("orientPolicy").classList.remove("hidden");
-  renderPolicyRow($("orientPolicyRow"), () => { $("orientGo").disabled = !brain.policy; });
-  $("orientGo").disabled = !brain.policy;
+  renderPolicyRow($("orientPolicyRow"), () => { $("orientGo").classList.add("ready"); });
+  $("orientGo").classList.toggle("ready", !!brain.policy);
   Sound.robo(5);
 }
 function openOrient() {
@@ -556,6 +556,10 @@ function orientAfterTeach(itemId) {
   }
 }
 $("orientGo").addEventListener("click", () => {
+  if (!brain.policy) {
+    aiAlert("잠깐만요! 모르는 물건이 나오면 어떻게 할지, 위에서 방침을 하나 골라주세요!");
+    return;
+  }
   $("orient").classList.add("hidden");
   phase = "c1"; save();
   playChallenge();
