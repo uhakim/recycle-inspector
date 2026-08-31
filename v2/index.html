@@ -17,6 +17,7 @@
       <button id="humanBtn" class="big ghost">🧑 내가 검사관 해보기</button>
       <button id="challengeBtn" class="big">🚛 도전 시작!</button>
       <button id="notebookBtn" class="big ghost">📒 알바 수첩</button>
+      <button id="histBtn" class="big ghost">📈 훈련 기록</button>
       <div id="homeStats" class="home-stats"></div>
       <button id="resetBtn" class="reset-link">🔄 처음부터 (기록 삭제)</button>
     </div>
@@ -92,6 +93,7 @@
         <div id="ruleReport" class="rule-report"></div>
       </div>
       <div class="row center" style="margin-top:12px">
+        <button id="reportHist" class="big ghost">📈 기록</button>
         <button id="reportNotebook" class="big ghost">📒 수첩 튜닝</button>
         <button id="reportNext" class="big">🚛 다시 도전!</button>
         <button id="reportHome" class="big ghost">🏠</button>
@@ -157,6 +159,19 @@
         <div id="policyRow" class="chips"></div>
       </div>
       <button id="nbClose" class="small ghost">덮기</button>
+    </div>
+  </div>
+
+  <!-- ══════ 훈련 기록 (튜닝 히스토리) ══════ -->
+  <div id="histOverlay" class="overlay hidden">
+    <div class="nb-card">
+      <h3 style="font-weight:900">📈 재활용이 훈련 기록</h3>
+      <p class="sub">막대를 누르면 그때의 수첩 상태와 <b>바꾼 것</b>이 보여요.</p>
+      <div id="histChart" class="hist-chart"></div>
+      <div id="histDetail" class="hist-detail"><span class="cnt">막대를 눌러 보세요.</span></div>
+      <div id="reflectCard" class="reflect-card"></div>
+      <button id="formBtn" class="big hidden">📨 선생님께 결과 보내기</button>
+      <button id="histClose" class="small ghost">닫기</button>
     </div>
   </div>
 

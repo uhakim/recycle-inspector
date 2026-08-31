@@ -179,13 +179,127 @@ async function playChallenge() {
   // 정산으로
   $("work").classList.add("hidden");
   teachBudget = TEACH_PER_RUN;
-  history.push({ n: history.length + 1, score: result.score, phase,
-    reg: Object.keys(brain.reg).length, rules: brain.rules.length, policy: brain.policy });
+  history.push({
+    n: history.length + 1, score: result.score, phase, today: todayCat,
+    policy: brain.policy,
+    regIds: Object.keys(brain.reg),
+    rulesSnap: brain.rules.map((r) => ({ f: [...r.feats], c: r.cat })),
+    reg: Object.keys(brain.reg).length, rules: brain.rules.length,
+  });
   save();
   renderReport();
   $("report").classList.remove("hidden");
   if (result.score === 100) Sound.good();
 }
+
+/* ── 훈련 기록 (튜닝 히스토리) ── */
+// 구글폼 연동: 유하님이 폼을 만들면 url과 entry ID만 채우면 됨
+const FORM = { url: "", entries: { tries: "", best: "", rules: "", policy: "" } };
+
+const ruleKey = (r) => [...r.f].sort().join("+") + "→" + r.c;
+const ruleLabel = (r) => r.f.map((f) => FEATURES[f].icon + FEATURES[f].name).join("+") + "→" + CATS[r.c];
+
+function runDiff(i) {
+  const cur = history[i], prev = history[i - 1];
+  if (!cur.rulesSnap) return null; // 구버전 기록
+  if (!prev || !prev.rulesSnap) {
+    return { added: cur.rulesSnap, removed: [], newReg: cur.regIds?.length ?? 0, policyChanged: false, first: true };
+  }
+  const pk = new Set(prev.rulesSnap.map(ruleKey));
+  const ck = new Set(cur.rulesSnap.map(ruleKey));
+  return {
+    added: cur.rulesSnap.filter((r) => !pk.has(ruleKey(r))),
+    removed: prev.rulesSnap.filter((r) => !ck.has(ruleKey(r))),
+    newReg: (cur.regIds?.length ?? 0) - (prev.regIds?.length ?? 0),
+    policyChanged: prev.policy !== cur.policy,
+    first: false,
+  };
+}
+
+let histSel = -1;
+function renderHistory() {
+  if (!history.length) {
+    $("histChart").innerHTML = `<span class="cnt">아직 재활용이 도전 기록이 없어요.</span>`;
+    $("histDetail").innerHTML = "";
+    $("reflectCard").innerHTML = "🤖 도전을 하면 여기에 성장 그래프가 그려져요!";
+    $("formBtn").classList.add("hidden");
+    return;
+  }
+  // 최고 기록·성찰은 자유 도전(free)만 대상 — 튜토리얼 대본 100점 제외
+  const freeIdxs = history.map((h, i) => (h.phase === "free" ? i : -1)).filter((i) => i >= 0);
+  const scoreIdxs = freeIdxs.length ? freeIdxs : history.map((_, i) => i);
+  const best = Math.max(...scoreIdxs.map((i) => history[i].score));
+  const bestIdx = scoreIdxs.find((i) => history[i].score === best);
+  if (histSel < 0 || histSel >= history.length) histSel = history.length - 1;
+  $("histChart").innerHTML = history.map((h, i) => {
+    const tut = h.phase !== "free";
+    return `<button class="hist-bar ${!tut && h.score === best ? "best" : ""} ${tut ? "tut" : ""} ${i === histSel ? "sel" : ""}"
+       data-h="${i}" style="height:${Math.max(14, h.score)}%">
+       ${i === bestIdx ? '<span class="star">⭐</span>' : ""}${h.score}</button>`;
+  }).join("");
+  document.querySelectorAll("[data-h]").forEach((b) =>
+    b.addEventListener("click", () => { histSel = Number(b.dataset.h); renderHistory(); }));
+  // 상세 + 변경점
+  const h = history[histSel];
+  const d = runDiff(histSel);
+  let diffHtml = "";
+  if (d) {
+    const parts = [];
+    if (d.first) parts.push(`시작 — 외운 것 ${d.newReg}개로 출발`);
+    else {
+      if (d.added.length) parts.push(`<span class="diff-add">+ 규칙 ${d.added.map(ruleLabel).join(", ")}</span>`);
+      if (d.removed.length) parts.push(`<span class="diff-del">− 규칙 ${d.removed.map(ruleLabel).join(", ")}</span>`);
+      if (d.newReg > 0) parts.push(`<span class="diff-add">+ 새로 외움 ${d.newReg}개</span>`);
+      if (d.policyChanged) parts.push(`방침 변경 → ${({pass:"일단 통과",deny:"일단 반려",guess:"찍어볼게"})[h.policy]}`);
+      if (!parts.length) parts.push("바꾼 것 없이 재도전");
+    }
+    const prevScore = histSel > 0 ? history[histSel - 1].score : null;
+    const delta = prevScore === null ? "" :
+      ` <b>(${h.score - prevScore >= 0 ? "+" : ""}${h.score - prevScore}점)</b>`;
+    diffHtml = `🔧 이번에 바꾼 것: ${parts.join(" · ")}${delta}`;
+  }
+  $("histDetail").innerHTML = `
+    <b>${h.n}회차 — ${h.score}점</b>${h.phase !== "free" ? ' <span class="cnt">🎓튜토리얼</span>' : ""} <span class="cnt">(${CATS[h.today] || ""} 날 · 방침 ${({pass:"🙂통과",deny:"🛑반려",guess:"🎲찍기"})[h.policy] || "-"})</span><br/>
+    📒 외운 것 ${h.reg}개 · 📐 규칙 ${h.rulesSnap ? h.rulesSnap.length : h.rules}개
+    ${h.rulesSnap && h.rulesSnap.length ? "<br/>" + h.rulesSnap.map((r) => `<span class="hchip">📐${ruleLabel(r)}</span>`).join(" ") : ""}
+    ${diffHtml ? "<br/>" + diffHtml : ""}`;
+  // 성찰 카드
+  const bh = history[bestIdx];
+  const bd = runDiff(bestIdx);
+  const bestChange = bd && !bd.first
+    ? (bd.added.length ? `규칙 [${bd.added.map(ruleLabel).join(", ")}]을 만들었을 때` :
+       bd.newReg > 0 ? `${bd.newReg}개를 새로 가르쳤을 때` :
+       bd.policyChanged ? "방침을 바꿨을 때" : "그대로 다시 했을 때")
+    : "처음 가르친 것으로";
+  $("reflectCard").innerHTML = (freeIdxs.length ? "" : "🎓 아직 튜토리얼 기록뿐이에요 — 자유 도전을 해보세요!<br/>") +
+    `✏️ <b>생각해 보기</b> — 최고 기록은 <b>${bestIdx + 1}회차 ${best}점</b>, ${bestChange} 나왔어요.<br/>` +
+    `① 점수가 가장 많이 오른 건 몇 회차? 그때 무엇을 바꿨나요?<br/>` +
+    `② 점수를 떨어뜨린 규칙이 있었나요? 왜 그랬을까요?<br/>` +
+    `→ 활동지에 옮겨 적어 보세요!`;
+  // 구글폼
+  if (FORM.url) {
+    $("formBtn").classList.remove("hidden");
+    $("formBtn").onclick = () => {
+      const q = new URLSearchParams();
+      if (FORM.entries.tries) q.set(FORM.entries.tries, history.length);
+      if (FORM.entries.best) q.set(FORM.entries.best, best);
+      if (FORM.entries.rules) q.set(FORM.entries.rules, (bh.rulesSnap || []).map(ruleLabel).join(" / "));
+      if (FORM.entries.policy) q.set(FORM.entries.policy, bh.policy);
+      window.open(`${FORM.url}?usp=pp_url&${q.toString()}`, "_blank");
+    };
+  } else {
+    $("formBtn").classList.add("hidden");
+  }
+}
+function openHistory() {
+  histSel = history.length - 1;
+  renderHistory();
+  $("histOverlay").classList.remove("hidden");
+}
+$("histBtn").addEventListener("click", () => { Sound.ready(); openHistory(); });
+$("reportHist").addEventListener("click", openHistory);
+$("histClose").addEventListener("click", () => $("histOverlay").classList.add("hidden"));
+$("histOverlay").addEventListener("click", (e) => { if (e.target === $("histOverlay")) $("histOverlay").classList.add("hidden"); });
 
 /* ── 사람 모드: 내가 검사관 (v1 방식 — 봉투 톡, 도장 쾅) ── */
 async function runHumanShift() {

@@ -353,3 +353,34 @@ select {
 
 
 
+
+
+/* ── 훈련 기록 ── */
+.hist-chart {
+  display: flex; align-items: flex-end; gap: 5px; height: 120px;
+  padding: 8px; background: #f6f1e4; border-radius: 11px; overflow-x: auto;
+}
+.hist-bar {
+  flex: 1 0 26px; max-width: 44px; border: none; border-radius: 6px 6px 0 0;
+  background: #cbc2ad; position: relative; cursor: pointer; font-family: inherit;
+  display: flex; align-items: flex-start; justify-content: center;
+  font-size: .66rem; font-weight: 800; color: #fff; padding-top: 2px;
+}
+.hist-bar.best { background: var(--green); }
+.hist-bar.sel { outline: 3px solid var(--accent); }
+.hist-bar .star { position: absolute; top: -18px; font-size: .8rem; }
+.hist-detail {
+  margin-top: 10px; border: 1.5px dashed var(--line); border-radius: 11px;
+  padding: 10px; font-size: .83rem; font-weight: 700; line-height: 1.65;
+}
+.hist-detail .diff-add { color: var(--green-deep); }
+.hist-detail .diff-del { color: var(--red); }
+.reflect-card {
+  margin-top: 10px; background: #fff3dd; border: 2px dashed var(--accent);
+  border-radius: 11px; padding: 10px 12px; font-size: .84rem; font-weight: 700; line-height: 1.6;
+}
+
+.hchip { display: inline-block; background: #f4effa; border: 1.5px solid var(--purple);
+  border-radius: 8px; padding: 1px 7px; font-size: .74rem; font-weight: 700; margin: 1px 0; }
+
+.hist-bar.tut { background: #d8d2c2; color: #8b8371; }
