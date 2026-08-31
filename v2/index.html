@@ -55,7 +55,7 @@
     <div class="nb-card">
       <div class="nb-tabs">
         <button id="tabItems" class="nb-tab active">📒 물건</button>
-        <button id="tabFeats" class="nb-tab">🧠 특징</button>
+        <button id="tabFeats" class="nb-tab">📐 규칙</button>
       </div>
 
       <!-- 물건 탭 -->
@@ -66,15 +66,13 @@
         <div id="mysteryRow" class="mystery-row"></div>
       </div>
 
-      <!-- 특징 탭 -->
+      <!-- 특징(규칙) 탭 -->
       <div id="paneFeats" class="nb-pane hidden">
-        <div class="eye-title">👀✋👃 재활용이의 감각 — 세상을 이것들로만 봐요</div>
-        <div id="featDex" class="feat-dex"></div>
-        <div class="agg-title">🔎 특징 관찰 노트 <span class="cnt">(가르칠 때 고른 특징들)</span></div>
-        <div id="featAgg" class="feat-agg"></div>
+        <p class="sub">공통점으로 묶어서 가르쳐요 — <b>특징을 골라 규칙을 만들면</b>, 처음 보는 물건도 분류할 수 있어요!</p>
         <div class="rule-title">📐 공통점 규칙 <span id="slotGauge" class="slot-gauge"></span></div>
         <div class="rule-builder">
           <div id="ruleChips" class="chips"></div>
+          <div id="rulePreview" class="feat-agg"></div>
           <div class="row">→ <select id="ruleCat"></select>
             <button id="ruleAdd" class="small">규칙 만들기</button></div>
         </div>
@@ -94,20 +92,13 @@
   <div id="teach" class="overlay hidden">
     <div class="teach-card">
       <div id="teachName" class="teach-name"></div>
-      <div id="teachStep1">
-        <p class="sub">이건 무엇으로 가르쳐줄까요?</p>
-        <div class="cat-btns">
-          <button data-cat="paper" class="cat-btn c-paper">종이류</button>
-          <button data-cat="can" class="cat-btn c-can">캔류</button>
-          <button data-cat="food" class="cat-btn c-food">음식물</button>
-          <button data-cat="plastic" class="cat-btn c-plastic">플라스틱류</button>
-          <button data-cat="trash" class="cat-btn c-trash">❌ 재활용 안 됨</button>
-        </div>
-      </div>
-      <div id="teachStep2" class="hidden">
-        <p class="sub">💡 <b>뭘 보고 알았어요?</b> 재활용이가 관찰한 것 중에 골라주세요 (1~2개)</p>
-        <div id="teachFeats" class="chips"></div>
-        <button id="teachDone" class="small" disabled>가르치기 완료!</button>
+      <p class="sub">이건 무엇으로 가르쳐줄까요?</p>
+      <div class="cat-btns">
+        <button data-cat="paper" class="cat-btn c-paper">종이류</button>
+        <button data-cat="can" class="cat-btn c-can">캔류</button>
+        <button data-cat="food" class="cat-btn c-food">음식물</button>
+        <button data-cat="plastic" class="cat-btn c-plastic">플라스틱류</button>
+        <button data-cat="trash" class="cat-btn c-trash">❌ 재활용 안 됨</button>
       </div>
       <button id="teachCancel" class="small ghost">그만두기</button>
     </div>

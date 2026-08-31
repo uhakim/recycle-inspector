@@ -6,7 +6,7 @@ import {
   emptyBrain, addRule, removeRule, runChallenge, itemOf, poolFree, makeBags,
 } from "./engine.js";
 
-const BRAIN_KEY = "rv2-brain", META_KEY = "rv2-meta", HIST_KEY = "rv2-hist";
+const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist";
 const $ = (id) => document.getElementById(id);
 
 /* ── 상태 ── */
@@ -16,7 +16,6 @@ function load(key, fallback) {
 }
 const brain = Object.assign(emptyBrain(), load(BRAIN_KEY, {}));
 if (!brain.policy) brain.policy = "guess";
-const meta = load(META_KEY, {});      // itemId → 가르칠 때 고른 특징들
 let history = load(HIST_KEY, []);     // [{n, score, reg, rules, policy}]
 let teachBudget = TEACH_PER_RUN;      // 도전 1회당 가르치기 예산
 let lastResult = null;
@@ -24,7 +23,6 @@ let teaching = null;                   // { itemId, cat }
 
 function save() {
   localStorage.setItem(BRAIN_KEY, JSON.stringify(brain));
-  localStorage.setItem(META_KEY, JSON.stringify(meta));
   localStorage.setItem(HIST_KEY, JSON.stringify(history));
 }
 
@@ -72,7 +70,7 @@ function renderReport(todayCat) {
         return `<span>[${rule.feats.map((f) => FEATURES[f].icon).join("")}→${CATS[rule.cat]}] ` +
           `${s.hits}맞힘${s.misses ? `·<span class="bad">${s.misses}틀림</span>` : ""}</span>`;
       }).join(" &nbsp; ")
-    : `<span class="cnt">아직 규칙이 없어요 — 수첩의 [🧠 특징] 탭에서 만들 수 있어요</span>`;
+    : `<span class="cnt">아직 규칙이 없어요 — 수첩의 [📐 규칙] 탭에서 만들 수 있어요</span>`;
 }
 
 function renderWrongList() {
@@ -94,45 +92,22 @@ function renderWrongList() {
     }));
 }
 
-/* ── 가르치기: 분류 → 특징 근거 ── */
+/* ── 가르치기: 분류만 (한 탭이면 끝 — 특징은 규칙 만들 때만 등장) ── */
 function openTeach(itemId) {
-  teaching = { itemId, cat: null, feats: [] };
-  const it = itemOf(itemId);
-  $("teachName").textContent = it.name;
-  $("teachStep1").classList.remove("hidden");
-  $("teachStep2").classList.add("hidden");
+  teaching = { itemId };
+  $("teachName").textContent = itemOf(itemId).name;
   $("teach").classList.remove("hidden");
 }
 document.querySelectorAll(".cat-btn").forEach((b) =>
   b.addEventListener("click", () => {
     if (!teaching) return;
-    teaching.cat = b.dataset.cat;
-    // 2단계: 그 물건이 실제 가진 특징만 제시
-    const it = itemOf(teaching.itemId);
-    $("teachFeats").innerHTML = it.feats.map((f) =>
-      `<span class="chip" data-tf="${f}">${FEATURES[f].icon} ${FEATURES[f].name}</span>`).join("");
-    document.querySelectorAll("[data-tf]").forEach((ch) =>
-      ch.addEventListener("click", () => {
-        const f = ch.dataset.tf;
-        if (teaching.feats.includes(f)) teaching.feats = teaching.feats.filter((x) => x !== f);
-        else if (teaching.feats.length < 2) teaching.feats.push(f);
-        document.querySelectorAll("[data-tf]").forEach((c) =>
-          c.classList.toggle("sel", teaching.feats.includes(c.dataset.tf)));
-        $("teachDone").disabled = teaching.feats.length === 0;
-      }));
-    $("teachStep1").classList.add("hidden");
-    $("teachStep2").classList.remove("hidden");
-    $("teachDone").disabled = true;
+    brain.reg[teaching.itemId] = b.dataset.cat;
+    teachBudget -= 1;
+    save();
+    $("teach").classList.add("hidden");
+    if (lastResult) renderWrongList();
+    teaching = null;
   }));
-$("teachDone").addEventListener("click", () => {
-  brain.reg[teaching.itemId] = teaching.cat;
-  meta[teaching.itemId] = teaching.feats;
-  teachBudget -= 1;
-  save();
-  $("teach").classList.add("hidden");
-  if (lastResult) renderWrongList();
-  teaching = null;
-});
 $("teachCancel").addEventListener("click", () => { teaching = null; $("teach").classList.add("hidden"); });
 
 /* ── 수첩: 물건 탭 ── */
@@ -140,10 +115,8 @@ function renderItemsPane() {
   $("itemCols").innerHTML = Object.keys(CATS).map((cat) => {
     const chips = Object.keys(brain.reg)
       .filter((id) => brain.reg[id] === cat && ITEMS[id])
-      .map((id) => {
-        const icons = (meta[id] || []).map((f) => FEATURES[f].icon).join("");
-        return `<div class="ichip">${itemOf(id).name} <span class="fi">${icons}</span></div>`;
-      }).join("") || `<div class="none">아직 없음</div>`;
+      .map((id) => `<div class="ichip">${itemOf(id).name}</div>`)
+      .join("") || `<div class="none">아직 없음</div>`;
     return `<div class="icol"><span class="icol-title c-${cat}">${CATS[cat]}</span>${chips}</div>`;
   }).join("");
   const unknown = Object.keys(ITEMS).filter((id) => !brain.reg[id]).length;
@@ -152,34 +125,9 @@ function renderItemsPane() {
     : `<b>모든 물건을 다 외웠어요! 🎉</b>`;
 }
 
-/* ── 수첩: 특징 탭 ── */
+/* ── 수첩: 규칙 탭 ── */
 let selFeats = [];
 function renderFeatsPane() {
-  // 도감 (감각기관별)
-  const groups = { eye: "👀 눈", hand: "✋ 손", nose: "👃 코" };
-  $("featDex").innerHTML = Object.keys(groups).map((g) =>
-    `<div class="dex-sense">${groups[g]}</div>` +
-    Object.keys(FEATURES).filter((f) => FEATURES[f].sense === g)
-      .map((f) => `<span class="dex-chip">${FEATURES[f].icon} ${FEATURES[f].name}</span>`).join("")
-  ).join("");
-  // 관찰 노트: 가르칠 때 고른 특징 → 분류 집계
-  const agg = {};
-  for (const id of Object.keys(meta)) {
-    if (!brain.reg[id]) continue;
-    for (const f of meta[id]) {
-      agg[f] = agg[f] || {};
-      agg[f][brain.reg[id]] = (agg[f][brain.reg[id]] || 0) + 1;
-    }
-  }
-  const aggKeys = Object.keys(agg);
-  $("featAgg").innerHTML = aggKeys.length
-    ? aggKeys.map((f) => {
-        const cats = Object.keys(agg[f]);
-        const parts = cats.map((c) => `${CATS[c]} ${agg[f][c]}개`).join(", ");
-        return `${FEATURES[f].icon} <b>${FEATURES[f].name}</b>를 고른 물건 → ${parts}` +
-          (cats.length > 1 ? ` <span class="warn">⚠ 여러 분류에 걸쳐요!</span>` : "");
-      }).join("<br/>")
-    : `<span class="cnt">아직 없어요. 가르칠 때 특징을 고르면 여기에 쌓여요.</span>`;
   // 규칙 조립기
   $("ruleChips").innerHTML = Object.keys(FEATURES).map((f) =>
     `<span class="chip ${selFeats.includes(f) ? "sel" : ""}" data-rf="${f}">${FEATURES[f].icon} ${FEATURES[f].name}</span>`).join("");
@@ -190,6 +138,18 @@ function renderFeatsPane() {
         : selFeats.length < 3 ? [...selFeats, f] : selFeats;
       renderFeatsPane();
     }));
+  // 미리보기: 고른 특징을 전부 가진, 이미 외운 물건들 (근거 확인)
+  if (selFeats.length) {
+    const known = Object.keys(brain.reg).filter((id) =>
+      ITEMS[id] && selFeats.every((f) => itemOf(id).feats.includes(f)));
+    const cats = [...new Set(known.map((id) => brain.reg[id]))];
+    $("rulePreview").innerHTML = known.length
+      ? `🔎 외운 물건 중: ${known.map((id) => `${itemOf(id).name}(${CATS[brain.reg[id]]})`).join(", ")}` +
+        (cats.length > 1 ? ` <span class="warn">⚠ 여러 분류에 걸쳐요!</span>` : "")
+      : `<span class="cnt">🔎 외운 물건 중엔 이 특징 조합이 아직 없어요 — 그래도 규칙은 만들 수 있어요!</span>`;
+  } else {
+    $("rulePreview").innerHTML = `<span class="cnt">특징을 1~3개 골라 보세요.</span>`;
+  }
   renderRuleCards();
 }
 
@@ -253,7 +213,7 @@ $("reportRetry").addEventListener("click", runNow);
 $("reportHome").addEventListener("click", () => { $("report").classList.add("hidden"); $("home").classList.remove("hidden"); renderHome(); });
 $("resetBtn").addEventListener("click", () => {
   if (!confirm("외운 물건, 규칙, 방침, 도전 기록을 모두 지울까요?")) return;
-  localStorage.removeItem(BRAIN_KEY); localStorage.removeItem(META_KEY); localStorage.removeItem(HIST_KEY);
+  localStorage.removeItem(BRAIN_KEY); localStorage.removeItem(HIST_KEY); localStorage.removeItem("rv2-meta");
   location.reload();
 });
 renderHome();
