@@ -223,13 +223,13 @@ select {
 .verdict.pass { color: var(--green-deep); border-color: var(--green-deep); }
 .verdict.deny { color: var(--red); border-color: var(--red); }
 @keyframes slam { from { transform: translate(-50%,-50%) rotate(-8deg) scale(2.2); opacity: 0; } }
-.ai-zone { position: absolute; right: 10px; bottom: 8px; width: 92px; text-align: center; }
+.ai-zone { position: absolute; left: 10px; bottom: 8px; width: 92px; text-align: center; }
 .ai-avatar svg { width: 76px; height: 82px; }
 .ai-avatar.thinking svg { animation: think .6s ease-in-out infinite alternate; }
 @keyframes think { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
 .ai-name { font-size: .7rem; font-weight: 900; color: #4a6e78; }
 .ai-speech {
-  position: absolute; right: 100px; bottom: 30px; width: min(62vw, 340px);
+  position: absolute; left: 100px; bottom: 30px; width: min(62vw, 340px);
   background: #eafwe; background: #eaf7fb; border: 2px solid #2c6e8f; border-radius: 12px;
   padding: 7px 11px; font-size: .8rem; font-weight: 700; text-align: left; z-index: 6;
 }
@@ -263,3 +263,43 @@ select {
   padding: 8px 11px; font-size: .85rem; font-weight: 700; margin-bottom: 8px;
 }
 .nb-tab.locked { opacity: .55; }
+
+/* ── 봉투·도장·통지서 (v1 이식) ── */
+.bag {
+  display: block; margin: 4px auto 8px; width: 96px; background: none; border: none;
+  cursor: pointer; font-family: inherit; animation: dealIn .35s ease-out;
+}
+.bag svg { width: 84px; height: 92px; display: block; margin: 0 auto; }
+.bag-hint {
+  display: block; font-size: .72rem; font-weight: 800; color: #7a6647;
+  background: #fff3dd; border: 1.5px dashed var(--accent); border-radius: 999px;
+  padding: 3px 9px; margin-top: 2px;
+}
+.stamp-tray {
+  display: flex; gap: 14px; justify-content: center; margin-top: 10px; padding-bottom: 4px;
+}
+.stamp {
+  font-family: inherit; border: none; background: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  transition: transform .08s;
+}
+.stamp:disabled { opacity: .45; cursor: default; }
+.stamp-head {
+  font-size: .95rem; font-weight: 900; color: #fff; padding: 10px 18px;
+  border-radius: 10px 10px 4px 4px; box-shadow: 0 4px 0 rgba(0,0,0,.25);
+}
+.stamp-pass .stamp-head { background: var(--green); }
+.stamp-deny .stamp-head { background: var(--red); }
+.stamp-handle {
+  width: 26px; height: 16px; background: #8a6b2f; border-radius: 0 0 8px 8px;
+}
+.stamp.slammed { transform: translateY(6px) scale(.94); }
+.citation {
+  position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%);
+  width: min(86%, 360px); background: #fdf2e3; border: 2.5px solid var(--red);
+  border-radius: 13px; padding: 14px; text-align: center; z-index: 8;
+  box-shadow: 0 8px 22px rgba(0,0,0,.28); animation: slam .25s ease-out;
+}
+.citation-head { font-weight: 900; color: var(--red); margin-bottom: 6px; }
+.citation p { font-size: .85rem; font-weight: 700; line-height: 1.5; margin-bottom: 10px; }
+.icard.tapable { cursor: pointer; }

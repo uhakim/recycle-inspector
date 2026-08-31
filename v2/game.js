@@ -7,7 +7,7 @@ import {
 } from "./engine.js";
 import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js";
 
-const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase";
+const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
 const $ = (id) => document.getElementById(id);
 
 /* ── 상태 ── */
@@ -18,9 +18,12 @@ function load(key, fallback) {
 const brain = Object.assign(emptyBrain(), load(BRAIN_KEY, {}));
 let history = load(HIST_KEY, []);
 let phase = load(PHASE_KEY, "orient"); // orient | c1 | c2 | free
+let humanBest = load(HB_KEY, null);
 let teachBudget = TEACH_PER_RUN;
 let lastResult = null;
 let teaching = null;
+let lastMode = "ai";
+function setStamps(on) { $("stampPass").disabled = !on; $("stampDeny").disabled = !on; }
 
 function save() {
   localStorage.setItem(BRAIN_KEY, JSON.stringify(brain));
@@ -71,11 +74,18 @@ async function playChallenge() {
   skipAll = false;
 
   // 씬 준비
+  lastMode = "ai";
   $("home").classList.add("hidden");
   $("report").classList.add("hidden");
   $("work").classList.remove("hidden");
   $("noticeCat").textContent = CATS[todayCat];
   $("bagTotal").textContent = result.bags.length;
+  $("scoreChip").classList.add("hidden");
+  $("speedBtn").classList.remove("hidden");
+  $("skipBtn").classList.remove("hidden");
+  document.querySelector(".ai-zone").classList.remove("hidden");
+  setStamps(false);
+  $("bagBtn").classList.add("hidden");
   $("aiAvatar").innerHTML = AI_SVG;
   aiSay(phase === "c1" ? "첫 출근! 수첩 보면서 열심히 할게요!" : "오늘도 열심히 하겠습니다!");
   await wait(1100);
@@ -96,7 +106,11 @@ async function playChallenge() {
     await wait(1200);
     $("pSpeech").classList.add("hidden");
 
-    // 봉투 열기 → 물건 카드
+    // 봉투 등장 → 재활용이가 촥 연다
+    $("bagHint").textContent = "";
+    $("bagBtn").classList.remove("hidden");
+    await wait(620);
+    $("bagBtn").classList.add("hidden");
     Sound.paper();
     const guesses = result.perItem.filter((p) => p.bagIndex === b);
     $("itemRow").innerHTML = guesses.map((g, i) => {
@@ -147,6 +161,9 @@ async function playChallenge() {
       aiSay(bag.aiPass ? `전부 ${CATS[todayCat]}! 통과입니다!` : `${CATS[todayCat]} 아닌 게 있어요! 반려!`);
       await wait(700);
       Sound.stamp();
+      const stampEl = bag.aiPass ? $("stampPass") : $("stampDeny");
+      stampEl.classList.add("slammed");
+      setTimeout(() => stampEl.classList.remove("slammed"), 240);
       $("verdict").className = `verdict ${bag.aiPass ? "pass" : "deny"}`;
       $("verdictText").textContent = bag.aiPass ? "통과" : "반려";
       $("verdict").classList.remove("hidden");
@@ -168,9 +185,118 @@ async function playChallenge() {
   if (result.score === 100) Sound.good();
 }
 
+/* ── 사람 모드: 내가 검사관 (v1 방식 — 봉투 톡, 도장 쾅) ── */
+async function runHumanShift() {
+  Sound.ready();
+  lastMode = "human";
+  skipAll = false;
+  const todayCat = phase === "free"
+    ? ["paper", "can", "food", "plastic"][Math.floor(Math.random() * 4)] : "paper";
+  const bags = makeBags(poolFree(phase === "free" ? 4 : 1), todayCat, 5);
+  $("home").classList.add("hidden");
+  $("report").classList.add("hidden");
+  $("work").classList.remove("hidden");
+  $("noticeCat").textContent = CATS[todayCat];
+  $("bagTotal").textContent = bags.length;
+  $("scoreChip").classList.remove("hidden");
+  $("speedBtn").classList.add("hidden");
+  $("skipBtn").classList.add("hidden");
+  document.querySelector(".ai-zone").classList.add("hidden");
+  $("aiSpeech").classList.add("hidden");
+  let ok = 0, bad = 0;
+  $("okCnt").textContent = 0; $("badCnt").textContent = 0;
+
+  for (let b = 0; b < bags.length; b += 1) {
+    const bag = bags[b];
+    const person = PEOPLE[b % PEOPLE.length];
+    $("bagNo").textContent = b + 1;
+    $("itemRow").innerHTML = "";
+    $("verdict").classList.add("hidden");
+    setStamps(false);
+    $("personSlot").innerHTML = person.svg;
+    await wait(560);
+    personSay(person);
+    $("bagHint").textContent = "봉투를 눌러 열기";
+    $("bagBtn").classList.remove("hidden");
+    await new Promise((res) => { $("bagBtn").onclick = res; });
+    $("bagBtn").onclick = null;
+    $("pSpeech").classList.add("hidden");
+    Sound.paper();
+    $("bagBtn").classList.add("hidden");
+    $("itemRow").innerHTML = bag.map((id, i) =>
+      `<div class="icard tapable" data-z="${id}" style="animation-delay:${i * 0.08}s">
+        ${ITEM_PLACEHOLDER}<span class="iname">${itemOf(id).name}</span></div>`).join("");
+    document.querySelectorAll("[data-z]").forEach((c) =>
+      c.addEventListener("click", () => openInspect(c.dataset.z)));
+    await wait(bag.length * 90 + 300);
+    setStamps(true);
+    const passed = await new Promise((res) => {
+      $("stampPass").onclick = () => res(true);
+      $("stampDeny").onclick = () => res(false);
+    });
+    $("stampPass").onclick = null; $("stampDeny").onclick = null;
+    setStamps(false);
+    Sound.stamp();
+    const stampEl = passed ? $("stampPass") : $("stampDeny");
+    stampEl.classList.add("slammed");
+    setTimeout(() => stampEl.classList.remove("slammed"), 240);
+    $("verdict").className = `verdict ${passed ? "pass" : "deny"}`;
+    $("verdictText").textContent = passed ? "통과" : "반려";
+    $("verdict").classList.remove("hidden");
+    const wrongItems = bag.filter((id) => itemOf(id).cat !== todayCat);
+    const shouldPass = wrongItems.length === 0;
+    await wait(430);
+    if (passed === shouldPass) {
+      ok += 1; Sound.good();
+    } else {
+      bad += 1; Sound.bad();
+      $("citationText").textContent = shouldPass
+        ? `이 봉투는 전부 ${CATS[todayCat]}였어요. 멀쩡한 봉투를 반려했어요!`
+        : `${wrongItems.map((id) => `${itemOf(id).name}(${CATS[itemOf(id).cat]})`).join(", ")}이(가) 섞여 있었는데 통과시켰어요!`;
+      $("citation").classList.remove("hidden");
+      await new Promise((res) => { $("citationOk").onclick = res; });
+      $("citationOk").onclick = null;
+      $("citation").classList.add("hidden");
+    }
+    $("okCnt").textContent = ok; $("badCnt").textContent = bad;
+    const p = document.querySelector(".person");
+    if (p) p.classList.add("leave");
+    await wait(460);
+  }
+
+  $("work").classList.add("hidden");
+  const acc = Math.round((ok / bags.length) * 100);
+  if (humanBest === null || acc > humanBest) {
+    humanBest = acc;
+    localStorage.setItem(HB_KEY, JSON.stringify(humanBest));
+  }
+  renderHumanReport(acc, ok, bad);
+  $("report").classList.remove("hidden");
+  if (acc === 100) Sound.good();
+}
+
+function renderHumanReport(acc, ok, bad) {
+  $("score").textContent = `${acc}점`;
+  $("scoreSub").textContent = `🧑 내가 검사관 · 봉투 ${ok + bad}개 (✅${ok} ❌${bad})`;
+  $("srcStats").classList.add("hidden");
+  $("teachZone").classList.add("hidden");
+  $("reportNotebook").classList.add("hidden");
+  const banner = $("aiBanner");
+  banner.textContent =
+    acc === 100 ? "🏆 완벽한 검사관! 이제 재활용이를 가르칠 자격이 충분해요."
+    : acc >= 80 ? "😎 훌륭해요! 공지판을 잘 확인했네요."
+    : acc >= 60 ? "🙂 나쁘지 않아요. 물건을 눌러 속성을 확인해 보세요."
+    : "😅 오늘은 좀 힘들었네요. 봉투 속을 꼼꼼히 살펴보세요!";
+  banner.classList.remove("hidden");
+  $("reportNext").textContent = phase === "orient" ? "🤖 이제 재활용이 만나기!" : "🚛 재활용이에게 맡기기";
+}
+
 /* ── 정산 ── */
 function renderReport() {
   const r = lastResult;
+  $("teachZone").classList.remove("hidden");
+  $("srcStats").classList.remove("hidden");
+  $("reportNotebook").classList.remove("hidden");
   $("score").textContent = `${r.score}점`;
   $("scoreSub").textContent = `물건 ${r.perItem.length}개 · 봉투 정확도 ${Math.round(r.bagAcc * 100)}% · ${history.length}회차`;
   const ruleHits = r.ruleStats.reduce((a, s) => a + s.hits, 0);
@@ -444,7 +570,7 @@ $("nbOverlay").addEventListener("click", (e) => { if (e.target === $("nbOverlay"
 /* ── 홈 ── */
 function renderHome() {
   const tag = {
-    orient: "신입 AI 재활용이가 출근을 기다리고 있어요",
+    orient: "먼저 🧑 검사관을 해보고, 신입 AI 재활용이를 가르쳐 보세요!",
     c1: "재활용이의 첫 근무! 수첩에 적어준 것만 나올 거예요",
     c2: "이번엔 새로운 주민들이 온다는 소문이…",
     free: "수첩을 튜닝하고, 도전으로 실력을 확인하세요",
@@ -457,13 +583,20 @@ function renderHome() {
   const best = history.length ? Math.max(...history.map((h) => h.score)) : null;
   const last = history[history.length - 1];
   $("homeStats").innerHTML = [
+    humanBest !== null ? `🧑 내 최고 ${humanBest}점` : "",
     `📒 외운 물건 ${Object.keys(brain.reg).length}개` + (phase === "free" ? ` · 📐 규칙 ${brain.rules.length}/${RULE_SLOTS}` : ""),
-    history.length ? `🚛 도전 ${history.length}회 · 최고 <b style="color:var(--green-deep)">${best}점</b> · 최근 ${last.score}점` : "",
+    history.length ? `🚛 재활용이 도전 ${history.length}회 · 최고 <b style="color:var(--green-deep)">${best}점</b> · 최근 ${last.score}점` : "",
   ].filter(Boolean).join("<br/>");
 }
 
 /* ── 정산 버튼: 단계 전환 ── */
 $("reportNext").addEventListener("click", () => {
+  if (lastMode === "human") {
+    $("report").classList.add("hidden");
+    if (phase === "orient") openOrient();
+    else playChallenge();
+    return;
+  }
   if (phase === "c1") {
     phase = "c2"; save();
     $("report").classList.add("hidden");
@@ -502,14 +635,16 @@ $("challengeBtn").addEventListener("click", () => {
   if (phase === "orient") openOrient();
   else playChallenge();
 });
+$("humanBtn").addEventListener("click", runHumanShift);
 $("notebookBtn").addEventListener("click", () => { Sound.ready(); openNotebook(); });
 $("resetBtn").addEventListener("click", () => {
   if (!confirm("외운 물건, 규칙, 방침, 도전 기록을 모두 지우고 처음부터 시작할까요?")) return;
-  [BRAIN_KEY, HIST_KEY, PHASE_KEY, "rv2-meta"].forEach((k) => localStorage.removeItem(k));
+  [BRAIN_KEY, HIST_KEY, PHASE_KEY, HB_KEY, "rv2-meta"].forEach((k) => localStorage.removeItem(k));
   location.reload();
 });
 if (new URLSearchParams(location.search).get("reset")) {
-  [BRAIN_KEY, HIST_KEY, PHASE_KEY, "rv2-meta"].forEach((k) => localStorage.removeItem(k));
+  [BRAIN_KEY, HIST_KEY, PHASE_KEY, HB_KEY, "rv2-meta"].forEach((k) => localStorage.removeItem(k));
+  humanBest = null;
   history = []; phase = "orient";
   Object.keys(brain.reg).forEach((k) => delete brain.reg[k]);
   brain.rules.length = 0; brain.policy = null;

@@ -14,6 +14,7 @@
     <div class="home-card">
       <h1 class="title">분리수거<br/>검사관 <span class="v2badge">v2</span></h1>
       <p id="homeTag" class="tag">재활용이를 튜닝하고, 도전으로 실력을 확인하세요</p>
+      <button id="humanBtn" class="big ghost">🧑 내가 검사관 해보기</button>
       <button id="challengeBtn" class="big">🚛 도전 시작!</button>
       <button id="notebookBtn" class="big ghost">📒 알바 수첩</button>
       <div id="homeStats" class="home-stats"></div>
@@ -32,6 +33,7 @@
       </div>
       <div class="hud">
         <span class="hud-chip">👜 <b id="bagNo">1</b>/<b id="bagTotal">5</b></span>
+        <span id="scoreChip" class="hud-chip hidden">✅ <b id="okCnt">0</b> ❌ <b id="badCnt">0</b></span>
         <button id="speedBtn" class="hud-chip hud-btn">⏩ 보통</button>
         <button id="skipBtn" class="hud-chip hud-btn">결과 보기 »</button>
       </div>
@@ -42,12 +44,31 @@
     </div>
     <div class="desk">
       <div class="desk-edge"></div>
+      <button id="bagBtn" class="bag hidden" aria-label="봉투 열기">
+        <svg viewBox="0 0 100 110" aria-hidden="true">
+          <path d="M18 34 h64 l-7 66 a8 8 0 0 1 -8 7 h-34 a8 8 0 0 1 -8 -7 z" fill="#c8b28f" stroke="#a58e69" stroke-width="3"/>
+          <path d="M32 34 c0-22 36-22 36 0" fill="none" stroke="#a58e69" stroke-width="5" stroke-linecap="round"/>
+          <text x="50" y="76" text-anchor="middle" font-size="15" font-weight="800" fill="#7a6647">톡!</text>
+        </svg>
+        <span id="bagHint" class="bag-hint">봉투를 눌러 열기</span>
+      </button>
       <div id="itemRow" class="item-row"></div>
       <div id="verdict" class="verdict hidden"><span id="verdictText"></span></div>
       <div class="ai-zone">
         <div id="aiSpeech" class="ai-speech hidden"><span id="aiSpeechText"></span></div>
         <div id="aiAvatar" class="ai-avatar"></div>
         <div class="ai-name">재활용이</div>
+      </div>
+      <div class="stamp-tray">
+        <button id="stampPass" class="stamp stamp-pass" disabled>
+          <span class="stamp-head">통과</span><span class="stamp-handle"></span></button>
+        <button id="stampDeny" class="stamp stamp-deny" disabled>
+          <span class="stamp-head">반려</span><span class="stamp-handle"></span></button>
+      </div>
+      <div id="citation" class="citation hidden">
+        <div class="citation-head">⚠ 검사 실수!</div>
+        <p id="citationText"></p>
+        <button id="citationOk" class="small">확인</button>
       </div>
     </div>
   </section>
@@ -60,10 +81,12 @@
       <div class="score-row"><span id="score" class="score-big">0점</span>
         <span id="scoreSub" class="cnt"></span></div>
       <div id="srcStats" class="src-stats"></div>
-      <div class="wrong-title">❌ 재활용이가 틀린 것 — 눌러서 가르쳐 주세요
-        <span id="teachBudget" class="budget"></span></div>
-      <div id="wrongList" class="wrong-list"></div>
-      <div id="ruleReport" class="rule-report"></div>
+      <div id="teachZone">
+        <div class="wrong-title">❌ 재활용이가 틀린 것 — 눌러서 가르쳐 주세요
+          <span id="teachBudget" class="budget"></span></div>
+        <div id="wrongList" class="wrong-list"></div>
+        <div id="ruleReport" class="rule-report"></div>
+      </div>
       <div class="row center" style="margin-top:12px">
         <button id="reportNotebook" class="big ghost">📒 수첩 튜닝</button>
         <button id="reportNext" class="big">🚛 다시 도전!</button>
