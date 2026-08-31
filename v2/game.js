@@ -1,12 +1,12 @@
 /* ═══════════ 분리수거 검사관 v2 — 3단계: 서사(튜토리얼) + 근무 씬 연출 ═══════════ */
 
-import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=9";
+import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=10";
 import {
   emptyBrain, addRule, removeRule, runChallenge, itemOf,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
-} from "./engine.js?v=9";
-import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=9";
-import { ART } from "./art.js?v=9";
+} from "./engine.js?v=10";
+import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=10";
+import { ART } from "./art.js?v=10";
 const art = (id) => ART[id] || ITEM_PLACEHOLDER;
 
 const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
@@ -688,8 +688,14 @@ function switchTab(items) {
   $("paneItems").classList.toggle("hidden", !items);
   $("paneFeats").classList.toggle("hidden", items || phase !== "free");
 }
-$("nbClose").addEventListener("click", () => { $("nbOverlay").classList.add("hidden"); renderHome(); });
-$("nbOverlay").addEventListener("click", (e) => { if (e.target === $("nbOverlay")) { $("nbOverlay").classList.add("hidden"); renderHome(); } });
+function closeNotebook() {
+  $("nbOverlay").classList.add("hidden");
+  const anyScreen = ["home", "work", "report"].some((id) => !$(id).classList.contains("hidden"));
+  if (!anyScreen) $("home").classList.remove("hidden");
+  renderHome();
+}
+$("nbClose").addEventListener("click", closeNotebook);
+$("nbOverlay").addEventListener("click", (e) => { if (e.target === $("nbOverlay")) closeNotebook(); });
 
 /* ── 홈 ── */
 function renderHome() {
@@ -738,6 +744,8 @@ $("reportNext").addEventListener("click", () => {
       phase = "free"; save();
       Sound.learn();
       $("report").classList.add("hidden");
+      $("home").classList.remove("hidden");
+      renderHome();
       openNotebook();
       switchTab(false); // 규칙 탭 바로 보여주기
     });
