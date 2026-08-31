@@ -149,3 +149,117 @@ select {
   background: none; cursor: pointer; margin-bottom: 6px;
 }
 .ichip { cursor: pointer; text-decoration: underline dotted var(--line); text-underline-offset: 3px; }
+
+/* ═══════════ 3단계: 근무 씬·오리엔테이션·대사 ═══════════ */
+
+.screen.work { flex-direction: column; padding: 0; align-items: stretch; }
+.wall {
+  background: linear-gradient(#cfe6de, #c2ddd3); padding: 12px 14px 8px;
+  display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap;
+}
+.sign {
+  background: #2f9e6e; color: #fff; font-weight: 900; font-size: .82rem;
+  padding: 6px 12px; border-radius: 9px; box-shadow: 0 3px 0 #237a54;
+}
+.notice {
+  background: #fffdf4; border: 2px solid var(--ink); border-radius: 10px;
+  padding: 6px 14px 8px; text-align: center; position: relative;
+  transform: rotate(-1.5deg); box-shadow: 3px 3px 0 rgba(46,57,71,.18);
+}
+.pin { width: 10px; height: 10px; border-radius: 50%; background: var(--red);
+  position: absolute; top: -5px; left: calc(50% - 5px); border: 2px solid var(--ink); }
+.notice-label { font-size: .66rem; font-weight: 800; color: var(--sub); }
+.notice-cat { font-size: 1.05rem; font-weight: 900; }
+.hud { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.hud-chip {
+  background: #fffdf4; border: 2px solid var(--ink); border-radius: 999px;
+  font-size: .76rem; font-weight: 800; padding: 5px 10px; font-family: inherit;
+}
+.hud-btn { cursor: pointer; }
+.booth {
+  flex: 0 0 auto; min-height: 148px; position: relative;
+  background: linear-gradient(#c2ddd3, #b7d8cd); overflow: hidden;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.person-slot { width: 128px; height: 128px; }
+.person-slot .person { width: 100%; height: 100%; animation: walkIn .55s ease-out; }
+.person-slot .person.leave { animation: walkOut .5s ease-in forwards; }
+@keyframes walkIn { from { transform: translateX(-140px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes walkOut { to { transform: translateX(150px); opacity: 0; } }
+.speech {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  background: #fff; border: 2px solid var(--ink); border-radius: 12px;
+  padding: 7px 12px; font-size: .82rem; font-weight: 700; max-width: 84%;
+}
+.desk {
+  flex: 1; background: #e8d2ab; position: relative; padding: 14px 12px 12px;
+  border-top: 6px solid #d4b483;
+}
+.desk-edge { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #c2a06b; }
+.item-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 116px; }
+.icard {
+  width: 92px; background: #fffdf4; border: 2px solid var(--ink); border-radius: 11px;
+  padding: 6px 5px 7px; text-align: center; animation: dealIn .3s ease-out backwards;
+  box-shadow: 2px 3px 0 rgba(46,57,71,.15);
+}
+.icard svg { width: 54px; height: 54px; }
+.icard .iname { display: block; font-size: .74rem; font-weight: 800; }
+.icard .itag {
+  display: inline-block; margin-top: 3px; font-size: .68rem; font-weight: 800;
+  border-radius: 7px; padding: 1px 7px; background: #eee; visibility: hidden;
+}
+.icard.inspecting { outline: 3px solid var(--accent); transform: translateY(-3px); }
+.itag.t-reg { background: #dff1e8; color: var(--green-deep); visibility: visible !important; }
+.itag.t-rule { background: #ece4f6; color: var(--purple); visibility: visible !important; }
+.itag.t-policy { background: #fff0d6; color: #8a6b2f; visibility: visible !important; }
+.itag.t-conflict { background: #fbe3e0; color: var(--red); visibility: visible !important; }
+@keyframes dealIn { from { transform: translateY(-26px) scale(.7); opacity: 0; } }
+.verdict {
+  position: absolute; left: 50%; top: 40%; transform: translate(-50%,-50%) rotate(-8deg);
+  font-size: 1.7rem; font-weight: 900; border: 4px solid; border-radius: 12px;
+  padding: 4px 18px; background: rgba(255,253,244,.9); animation: slam .22s ease-out;
+  z-index: 5;
+}
+.verdict.pass { color: var(--green-deep); border-color: var(--green-deep); }
+.verdict.deny { color: var(--red); border-color: var(--red); }
+@keyframes slam { from { transform: translate(-50%,-50%) rotate(-8deg) scale(2.2); opacity: 0; } }
+.ai-zone { position: absolute; right: 10px; bottom: 8px; width: 92px; text-align: center; }
+.ai-avatar svg { width: 76px; height: 82px; }
+.ai-avatar.thinking svg { animation: think .6s ease-in-out infinite alternate; }
+@keyframes think { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+.ai-name { font-size: .7rem; font-weight: 900; color: #4a6e78; }
+.ai-speech {
+  position: absolute; right: 100px; bottom: 30px; width: min(62vw, 340px);
+  background: #eafwe; background: #eaf7fb; border: 2px solid #2c6e8f; border-radius: 12px;
+  padding: 7px 11px; font-size: .8rem; font-weight: 700; text-align: left; z-index: 6;
+}
+
+/* 오리엔테이션·대사 */
+.orient-head { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
+.orient-avatar svg, .orient-avatar { width: 84px; flex: 0 0 84px; }
+.orient-bubble {
+  flex: 1; background: #eaf7fb; border: 2px solid #2c6e8f; border-radius: 12px;
+  padding: 10px 12px; font-size: .88rem; font-weight: 700; line-height: 1.5;
+}
+.orient-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.orient-item {
+  font-family: inherit; background: #fffdf4; border: 2px solid var(--ink); border-radius: 11px;
+  padding: 8px 4px; text-align: center; cursor: pointer; font-size: .8rem; font-weight: 800;
+}
+.orient-item svg { width: 52px; height: 52px; display: block; margin: 0 auto; }
+.orient-item.taught { border-color: var(--green); background: #eaf6f0; }
+.orient-item:disabled { opacity: .55; }
+.dlg-card {
+  width: 100%; max-width: 480px; margin: auto; background: var(--paper);
+  border: 2.5px solid var(--ink); border-radius: 16px; padding: 18px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center;
+}
+.dlg-text {
+  margin-top: 10px; background: #eaf7fb; border: 2px solid #2c6e8f; border-radius: 12px;
+  padding: 12px 14px; font-size: .95rem; font-weight: 700; line-height: 1.55; width: 100%;
+}
+.ai-banner {
+  background: #eaf7fb; border: 2px solid #2c6e8f; border-radius: 11px;
+  padding: 8px 11px; font-size: .85rem; font-weight: 700; margin-bottom: 8px;
+}
+.nb-tab.locked { opacity: .55; }

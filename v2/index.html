@@ -9,21 +9,11 @@
 <body>
 <div id="app">
 
-  <!-- ══════ 홈 (임시 — 3단계에서 튜토리얼·연출로 대체) ══════ -->
+  <!-- ══════ 홈 ══════ -->
   <section id="home" class="screen">
     <div class="home-card">
       <h1 class="title">분리수거<br/>검사관 <span class="v2badge">v2</span></h1>
-      <p class="tag">재활용이를 튜닝하고, 도전으로 실력을 확인하세요</p>
-      <div class="row center">
-        <label class="cnt">도전 범위</label>
-        <select id="stageSel">
-          <option value="1">1단계 (20종)</option>
-          <option value="2">2단계 (45종)</option>
-          <option value="3">3단계 (72종)</option>
-          <option value="4" selected>전체 (100종)</option>
-        </select>
-        <select id="todaySel"></select>
-      </div>
+      <p id="homeTag" class="tag">재활용이를 튜닝하고, 도전으로 실력을 확인하세요</p>
       <button id="challengeBtn" class="big">🚛 도전 시작!</button>
       <button id="notebookBtn" class="big ghost">📒 알바 수첩</button>
       <div id="homeStats" class="home-stats"></div>
@@ -31,10 +21,42 @@
     </div>
   </section>
 
-  <!-- ══════ 정산 (간이 — 3단계에서 근무 연출 추가) ══════ -->
+  <!-- ══════ 근무(도전) 씬 ══════ -->
+  <section id="work" class="screen work hidden">
+    <div class="wall">
+      <div class="sign">♻ 우리동네 재활용 센터</div>
+      <div class="notice">
+        <div class="pin"></div>
+        <div class="notice-label">오늘의 배출일</div>
+        <div id="noticeCat" class="notice-cat">종이류</div>
+      </div>
+      <div class="hud">
+        <span class="hud-chip">👜 <b id="bagNo">1</b>/<b id="bagTotal">5</b></span>
+        <button id="speedBtn" class="hud-chip hud-btn">⏩ 보통</button>
+        <button id="skipBtn" class="hud-chip hud-btn">결과 보기 »</button>
+      </div>
+    </div>
+    <div class="booth">
+      <div id="personSlot" class="person-slot"></div>
+      <div id="pSpeech" class="speech hidden"><span id="pSpeechText"></span></div>
+    </div>
+    <div class="desk">
+      <div class="desk-edge"></div>
+      <div id="itemRow" class="item-row"></div>
+      <div id="verdict" class="verdict hidden"><span id="verdictText"></span></div>
+      <div class="ai-zone">
+        <div id="aiSpeech" class="ai-speech hidden"><span id="aiSpeechText"></span></div>
+        <div id="aiAvatar" class="ai-avatar"></div>
+        <div class="ai-name">재활용이</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════ 정산 ══════ -->
   <section id="report" class="screen hidden">
     <div class="report-card">
       <h2>🚛 도전 결과</h2>
+      <div id="aiBanner" class="ai-banner hidden"></div>
       <div class="score-row"><span id="score" class="score-big">0점</span>
         <span id="scoreSub" class="cnt"></span></div>
       <div id="srcStats" class="src-stats"></div>
@@ -44,11 +66,40 @@
       <div id="ruleReport" class="rule-report"></div>
       <div class="row center" style="margin-top:12px">
         <button id="reportNotebook" class="big ghost">📒 수첩 튜닝</button>
-        <button id="reportRetry" class="big">🚛 다시 도전!</button>
+        <button id="reportNext" class="big">🚛 다시 도전!</button>
         <button id="reportHome" class="big ghost">🏠</button>
       </div>
     </div>
   </section>
+
+  <!-- ══════ 오리엔테이션 ══════ -->
+  <div id="orient" class="overlay hidden">
+    <div class="nb-card">
+      <div class="orient-head">
+        <div id="orientAvatar" class="orient-avatar"></div>
+        <div class="orient-bubble">안녕하세요, 신입 <b>재활용이</b>입니다! 🤖<br/>
+          출근 전에 <b>딱 3개만</b> 가르쳐 주세요. 한 번에 많이는 못 외워요…</div>
+      </div>
+      <div id="orientTeach">
+        <div class="cnt" style="text-align:center;margin-bottom:6px">가르친 것 <b id="orientCnt">0</b> / 3</div>
+        <div id="orientGrid" class="orient-grid"></div>
+      </div>
+      <div id="orientPolicy" class="hidden">
+        <p class="sub" style="text-align:center">그리고 하나만 더요! 수첩에 없는 <b>모르는 물건</b>이 나오면, 저 어떻게 할까요?</p>
+        <div id="orientPolicyRow" class="chips" style="justify-content:center"></div>
+        <button id="orientGo" class="big" disabled>출근시키기!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ 재활용이 대사 오버레이 ══════ -->
+  <div id="dlg" class="overlay hidden">
+    <div class="dlg-card">
+      <div id="dlgAvatar" class="orient-avatar"></div>
+      <div id="dlgText" class="dlg-text"></div>
+      <div class="cnt" style="text-align:center;margin-top:8px">눌러서 계속 ▸</div>
+    </div>
+  </div>
 
   <!-- ══════ 알바 수첩 (두 탭) ══════ -->
   <div id="nbOverlay" class="overlay hidden">
@@ -57,16 +108,12 @@
         <button id="tabItems" class="nb-tab active">📒 물건</button>
         <button id="tabFeats" class="nb-tab">📐 규칙</button>
       </div>
-
-      <!-- 물건 탭 -->
       <div id="paneItems" class="nb-pane">
-        <p class="sub">재활용이가 <b>낱개로 외운</b> 물건들이에요. 새로 가르치는 건 <b>도전에서 틀렸을 때</b>(한 번에 3개까지)!</p>
+        <p class="sub">재활용이가 <b>낱개로 외운</b> 물건들이에요. 물건을 누르면 속성을 볼 수 있어요.</p>
         <div id="itemCols" class="item-cols"></div>
         <div class="mystery-title">❓ 아직 모르는 물건</div>
         <div id="mysteryRow" class="mystery-row"></div>
       </div>
-
-      <!-- 특징(규칙) 탭 -->
       <div id="paneFeats" class="nb-pane hidden">
         <p class="sub">공통점으로 묶어서 가르쳐요 — <b>특징을 골라 규칙을 만들면</b>, 처음 보는 물건도 분류할 수 있어요!</p>
         <div class="rule-title">📐 공통점 규칙 <span id="slotGauge" class="slot-gauge"></span></div>
@@ -78,8 +125,6 @@
         </div>
         <div id="ruleCards"></div>
       </div>
-
-      <!-- 방침 (하단 고정) -->
       <div class="policy-zone">
         <div class="rule-title">🧭 방침 — 모르는 물건이 나오면?</div>
         <div id="policyRow" class="chips"></div>

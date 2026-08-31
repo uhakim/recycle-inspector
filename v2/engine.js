@@ -70,16 +70,19 @@ export function bagVerdict(guesses, todayCat) {
    bags: [[itemId,...], ...], 반환: 정산 통계 전체 */
 export function runChallenge(bags, brain, todayCat, rng = Math.random) {
   const perItem = [];
+  const bagsOut = [];
   let okBags = 0;
   const ruleStats = brain.rules.map(() => ({ hits: 0, misses: 0 }));
   let regHits = 0, regMisses = 0, conflictCount = 0;
 
-  for (const bag of bags) {
+  for (const [bagIndex, bag] of bags.entries()) {
     const guesses = bag.map((id) => ({ id, ...classifyItem(id, brain, todayCat, rng) }));
     const aiPass = bagVerdict(guesses, todayCat);
     const shouldPass = bag.every((id) => itemOf(id).cat === todayCat);
     if (aiPass === shouldPass) okBags += 1;
+    bagsOut.push({ items: [...bag], aiPass, shouldPass, correct: aiPass === shouldPass });
     for (const g of guesses) {
+      g.bagIndex = bagIndex;
       const truth = itemOf(g.id).cat;
       // 물건 단위 정오: "reject"는 truth가 오늘 배출일이 아니면 사실상 옳은 처리로 본다
       const correct = g.cat === "reject" ? truth !== todayCat : g.cat === truth;
@@ -95,6 +98,7 @@ export function runChallenge(bags, brain, todayCat, rng = Math.random) {
     itemAcc,
     score: Math.round(itemAcc * 100),
     perItem, ruleStats, regHits, regMisses, conflictCount,
+    bags: bagsOut, todayCat,
   };
 }
 

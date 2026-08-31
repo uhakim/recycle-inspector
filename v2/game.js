@@ -1,12 +1,13 @@
-/* ═══════════ 분리수거 검사관 v2 — 2단계: 수첩 두 탭 + 간이 튜닝 루프 ═══════════
-   (도전·정산은 간이 계산판 — 3단계에서 창구 연출·튜토리얼로 교체) */
+/* ═══════════ 분리수거 검사관 v2 — 3단계: 서사(튜토리얼) + 근무 씬 연출 ═══════════ */
 
 import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js";
 import {
-  emptyBrain, addRule, removeRule, runChallenge, itemOf, poolFree, makeBags,
+  emptyBrain, addRule, removeRule, runChallenge, itemOf,
+  poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
 } from "./engine.js";
+import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js";
 
-const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist";
+const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase";
 const $ = (id) => document.getElementById(id);
 
 /* ── 상태 ── */
@@ -15,45 +16,160 @@ function load(key, fallback) {
   catch { return fallback; }
 }
 const brain = Object.assign(emptyBrain(), load(BRAIN_KEY, {}));
-if (!brain.policy) brain.policy = "guess";
-let history = load(HIST_KEY, []);     // [{n, score, reg, rules, policy}]
-let teachBudget = TEACH_PER_RUN;      // 도전 1회당 가르치기 예산
+let history = load(HIST_KEY, []);
+let phase = load(PHASE_KEY, "orient"); // orient | c1 | c2 | free
+let teachBudget = TEACH_PER_RUN;
 let lastResult = null;
-let teaching = null;                   // { itemId, cat }
+let teaching = null;
 
 function save() {
   localStorage.setItem(BRAIN_KEY, JSON.stringify(brain));
   localStorage.setItem(HIST_KEY, JSON.stringify(history));
+  localStorage.setItem(PHASE_KEY, JSON.stringify(phase));
 }
 
-/* ── 홈 ── */
-function renderHome() {
-  const best = history.length ? Math.max(...history.map((h) => h.score)) : null;
-  const last = history[history.length - 1];
-  $("homeStats").innerHTML = [
-    `📒 외운 물건 ${Object.keys(brain.reg).length}개 · 📐 규칙 ${brain.rules.length}/${RULE_SLOTS}`,
-    history.length ? `🚛 도전 ${history.length}회 · 최고 <b style="color:var(--green-deep)">${best}점</b> · 최근 ${last.score}점` : "아직 도전 기록이 없어요",
-  ].join("<br/>");
+/* ── 연출 유틸 ── */
+let speed = 1;           // 1 보통, 0.45 빠름
+let skipAll = false;
+const wait = (ms) => new Promise((r) => setTimeout(r, skipAll ? 0 : ms * speed));
+const syl = (text) => Math.max(3, Math.min(11, Math.round(text.replace(/[^가-힣a-zA-Z]/g, "").length * 0.5)));
+function aiSay(text) {
+  if (skipAll) return;
+  $("aiSpeechText").textContent = text;
+  $("aiSpeech").classList.remove("hidden");
+  Sound.robo(syl(text));
+}
+function personSay(person) {
+  if (skipAll) return;
+  const line = person.lines[Math.floor(Math.random() * person.lines.length)];
+  $("pSpeechText").textContent = line;
+  $("pSpeech").classList.remove("hidden");
+  Sound.mumble(person.voice, syl(line));
 }
 
-/* ── 도전 (간이) ── */
-function runNow() {
-  const maxStage = Number($("stageSel").value);
-  const todayCat = $("todaySel").value;
-  const bags = makeBags(poolFree(maxStage), todayCat, 8);
-  lastResult = runChallenge(bags, brain, todayCat);
-  teachBudget = TEACH_PER_RUN;
-  history.push({
-    n: history.length + 1, score: lastResult.score,
-    reg: Object.keys(brain.reg).length, rules: brain.rules.length, policy: brain.policy,
-  });
-  save();
-  renderReport(todayCat);
+/* ── 도전 실행 (연출 포함) ── */
+function prepareRun() {
+  if (phase === "c1") {
+    const pool = poolTutorial1(brain);
+    return { bags: makeBags(pool, "paper", 4), todayCat: "paper" };
+  }
+  if (phase === "c2") {
+    const curated = Object.keys(ITEMS).filter((id) =>
+      !brain.reg[id] && itemOf(id).stage <= 2 && itemOf(id).cat !== "paper")
+      .sort(() => Math.random() - 0.5).slice(0, 8);
+    return { bags: makeTutorial2Bags(brain, curated, 5), todayCat: "paper" };
+  }
+  const today = ["paper", "can", "food", "plastic"][Math.floor(Math.random() * 4)];
+  return { bags: makeBags(poolFree(4), today, 5), todayCat: today };
+}
+
+async function playChallenge() {
+  Sound.ready();
+  const { bags, todayCat } = prepareRun();
+  const result = runChallenge(bags, brain, todayCat);
+  lastResult = result;
+  skipAll = false;
+
+  // 씬 준비
   $("home").classList.add("hidden");
+  $("report").classList.add("hidden");
+  $("work").classList.remove("hidden");
+  $("noticeCat").textContent = CATS[todayCat];
+  $("bagTotal").textContent = result.bags.length;
+  $("aiAvatar").innerHTML = AI_SVG;
+  aiSay(phase === "c1" ? "첫 출근! 수첩 보면서 열심히 할게요!" : "오늘도 열심히 하겠습니다!");
+  await wait(1100);
+
+  for (let b = 0; b < result.bags.length; b += 1) {
+    if (skipAll) break;
+    const bag = result.bags[b];
+    const person = PEOPLE[(history.length + b) % PEOPLE.length];
+    $("bagNo").textContent = b + 1;
+    $("itemRow").innerHTML = "";
+    $("verdict").classList.add("hidden");
+    $("aiSpeech").classList.add("hidden");
+
+    // 주민 등장
+    $("personSlot").innerHTML = person.svg;
+    await wait(560);
+    personSay(person);
+    await wait(1200);
+    $("pSpeech").classList.add("hidden");
+
+    // 봉투 열기 → 물건 카드
+    Sound.paper();
+    const guesses = result.perItem.filter((p) => p.bagIndex === b);
+    $("itemRow").innerHTML = guesses.map((g, i) => {
+      const it = itemOf(g.id);
+      return `<div class="icard" id="card${b}-${i}" style="animation-delay:${i * 0.08}s">
+        ${ITEM_PLACEHOLDER}<span class="iname">${it.name}</span><span class="itag" id="tag${b}-${i}">?</span></div>`;
+    }).join("");
+    await wait(guesses.length * 90 + 380);
+
+    // 물건별 판정
+    $("aiAvatar").classList.add("thinking");
+    for (let i = 0; i < guesses.length; i += 1) {
+      if (skipAll) break;
+      const g = guesses[i];
+      const it = itemOf(g.id);
+      document.querySelectorAll(".icard").forEach((c) => c.classList.remove("inspecting"));
+      const card = $(`card${b}-${i}`);
+      if (card) card.classList.add("inspecting");
+      const tag = $(`tag${b}-${i}`);
+      const catName = g.cat === "reject" ? "반려" : CATS[g.cat];
+      if (g.source === "reg") {
+        aiSay(`${it.name}! 수첩에 있어요 — ${catName}!`);
+        if (tag) tag.className = "itag t-reg", tag.textContent = catName;
+      } else if (g.source === "rule") {
+        const feats = brain.rules[g.ruleIndex].feats.map((f) => FEATURES[f].name).join("+");
+        aiSay(`${it.name}… 규칙이다! ${feats}는 ${catName}!`);
+        if (tag) tag.className = "itag t-rule", tag.textContent = `📐 ${catName}`;
+      } else if (g.conflict) {
+        aiSay(`으악, ${it.name}에서 규칙 두 개가 싸워요! 🤯 방침대로 할게요…`);
+        if (tag) tag.className = "itag t-conflict", tag.textContent = `🤯 ${catName}`;
+      } else if (g.source === "policy-pass") {
+        aiSay(`${it.name}…? 몰라요. 방침대로 일단 통과!`);
+        if (tag) tag.className = "itag t-policy", tag.textContent = `🙂 ${catName}`;
+      } else if (g.source === "policy-deny") {
+        aiSay(`${it.name}…? 모르는 건 방침대로 반려!`);
+        if (tag) tag.className = "itag t-policy", tag.textContent = `🛑 반려`;
+      } else {
+        aiSay(`${it.name}…? 🎲 ${catName} 아닐까요?`);
+        Sound.dice();
+        if (tag) tag.className = "itag t-policy", tag.textContent = `🎲 ${catName}`;
+      }
+      await wait(g.source === "reg" ? 850 : 1050);
+    }
+    $("aiAvatar").classList.remove("thinking");
+
+    // 봉투 판정 도장
+    if (!skipAll) {
+      aiSay(bag.aiPass ? `전부 ${CATS[todayCat]}! 통과입니다!` : `${CATS[todayCat]} 아닌 게 있어요! 반려!`);
+      await wait(700);
+      Sound.stamp();
+      $("verdict").className = `verdict ${bag.aiPass ? "pass" : "deny"}`;
+      $("verdictText").textContent = bag.aiPass ? "통과" : "반려";
+      $("verdict").classList.remove("hidden");
+      await wait(750);
+      const p = document.querySelector(".person");
+      if (p) p.classList.add("leave");
+      await wait(420);
+    }
+  }
+
+  // 정산으로
+  $("work").classList.add("hidden");
+  teachBudget = TEACH_PER_RUN;
+  history.push({ n: history.length + 1, score: result.score, phase,
+    reg: Object.keys(brain.reg).length, rules: brain.rules.length, policy: brain.policy });
+  save();
+  renderReport();
   $("report").classList.remove("hidden");
+  if (result.score === 100) Sound.good();
 }
 
-function renderReport(todayCat) {
+/* ── 정산 ── */
+function renderReport() {
   const r = lastResult;
   $("score").textContent = `${r.score}점`;
   $("scoreSub").textContent = `물건 ${r.perItem.length}개 · 봉투 정확도 ${Math.round(r.bagAcc * 100)}% · ${history.length}회차`;
@@ -62,15 +178,30 @@ function renderReport(todayCat) {
   $("srcStats").innerHTML =
     `📒 외운 물건으로 맞힘 <b>${r.regHits}</b> · 📐 규칙으로 맞힘 <b>${ruleHits}</b> (틀리게 함 ${ruleMiss})` +
     (r.conflictCount ? ` · <span class="conflict">🤯 규칙 싸움 ${r.conflictCount}회</span>` : "");
+  // 재활용이 한마디
+  const banner = $("aiBanner");
+  if (phase === "c1") {
+    banner.textContent = r.score === 100
+      ? "🤖 수첩에 적힌 애들이라 다 알아봤어요! 저 잘하죠? 😊"
+      : "🤖 어라…? 수첩에 적힌 대로 했는데 틀렸대요… 혹시 수첩이 잘못 적힌 걸까요? 😅 (아래에서 고쳐 주세요!)";
+    banner.classList.remove("hidden");
+  } else if (phase === "c2") {
+    banner.textContent = "🤖 어어… 처음 보는 게 너무 많았어요… 😵";
+    banner.classList.remove("hidden");
+  } else if (r.score === 100) {
+    banner.textContent = "🤖 완벽했어요! 수첩이 최고예요! ✨";
+    banner.classList.remove("hidden");
+  } else banner.classList.add("hidden");
   renderWrongList();
-  // 규칙별 성적
   $("ruleReport").innerHTML = brain.rules.length
     ? "📐 규칙 성적: " + brain.rules.map((rule, i) => {
         const s = r.ruleStats[i];
         return `<span>[${rule.feats.map((f) => FEATURES[f].icon).join("")}→${CATS[rule.cat]}] ` +
           `${s.hits}맞힘${s.misses ? `·<span class="bad">${s.misses}틀림</span>` : ""}</span>`;
       }).join(" &nbsp; ")
-    : `<span class="cnt">아직 규칙이 없어요 — 수첩의 [📐 규칙] 탭에서 만들 수 있어요</span>`;
+    : (phase === "free" ? `<span class="cnt">아직 규칙이 없어요 — 수첩의 [📐 규칙] 탭에서 만들 수 있어요</span>` : "");
+  // 단계별 버튼
+  $("reportNext").textContent = phase === "c1" ? "좋아, 계속!" : phase === "c2" ? "어떡하지…" : "🚛 다시 도전!";
 }
 
 function renderWrongList() {
@@ -79,20 +210,25 @@ function renderWrongList() {
   $("wrongList").innerHTML = wrong.length
     ? wrong.map((p) => {
         const it = itemOf(p.id);
-        const taught = !!brain.reg[p.id];
+        const done = !!brain.reg[p.id] && p.source !== "reg";
         const said = p.cat === "reject" ? "반려" : CATS[p.cat] || "?";
-        return `<button class="wrong-item ${taught ? "taught" : ""}" data-t="${p.id}" ${taught ? "disabled" : ""}>
-          ${it.name} <small>(${said}라고 함)</small>${taught ? " ✔" : ""}</button>`;
+        return `<button class="wrong-item ${done ? "taught" : ""}" data-t="${p.id}" ${done ? "disabled" : ""}>
+          ${it.name} <small>(${said}라고 함)</small>${done ? " ✔" : ""}</button>`;
       }).join("")
     : `<span class="cnt">✨ 틀린 게 없어요! 완벽!</span>`;
   document.querySelectorAll("[data-t]").forEach((b) =>
     b.addEventListener("click", () => {
-      if (teachBudget <= 0) { alert(`재활용이는 한 번에 ${TEACH_PER_RUN}개밖에 못 외워요! 다시 도전한 뒤 가르쳐 주세요.`); return; }
+      if (teachBudget <= 0) {
+        aiAlert(`한 번에 ${TEACH_PER_RUN}개밖에 못 외워요! 다시 도전한 뒤 가르쳐 주세요.`);
+        return;
+      }
       openTeach(b.dataset.t);
     }));
 }
 
-/* ── 속성 확인 팝업 (눌렀을 때만 — 학습과 분리) ── */
+function aiAlert(msg) { alert(`🤖 ${msg}`); }
+
+/* ── 속성 팝업 ── */
 function attrChips(itemId) {
   return itemOf(itemId).feats.map((f) =>
     `<span class="chip">${FEATURES[f].icon} ${FEATURES[f].name}</span>`).join("");
@@ -107,9 +243,11 @@ function openInspect(itemId) {
 $("inspectClose").addEventListener("click", () => $("inspect").classList.add("hidden"));
 $("inspect").addEventListener("click", (e) => { if (e.target === $("inspect")) $("inspect").classList.add("hidden"); });
 
-/* ── 가르치기: 분류만 (한 탭이면 끝 — 특징은 규칙 만들 때만 등장) ── */
-function openTeach(itemId) {
+/* ── 가르치기 (분류 한 탭) ── */
+let teachContext = "report"; // report | orient
+function openTeach(itemId, context = "report") {
   teaching = { itemId };
+  teachContext = context;
   $("teachName").textContent = itemOf(itemId).name;
   $("teachAttrs").classList.add("hidden");
   $("teachAttrs").innerHTML = attrChips(itemId);
@@ -120,15 +258,76 @@ document.querySelectorAll(".cat-btn").forEach((b) =>
   b.addEventListener("click", () => {
     if (!teaching) return;
     brain.reg[teaching.itemId] = b.dataset.cat;
-    teachBudget -= 1;
+    Sound.learn();
     save();
     $("teach").classList.add("hidden");
-    if (lastResult) renderWrongList();
+    if (teachContext === "orient") orientAfterTeach(teaching.itemId);
+    else { teachBudget -= 1; if (lastResult) renderWrongList(); }
     teaching = null;
   }));
 $("teachCancel").addEventListener("click", () => { teaching = null; $("teach").classList.add("hidden"); });
 
-/* ── 수첩: 물건 탭 ── */
+/* ── 오리엔테이션 ── */
+function openOrient() {
+  Sound.ready();
+  $("orientAvatar").innerHTML = AI_SVG;
+  const candidates = Object.keys(ITEMS).filter((id) => itemOf(id).stage === 1)
+    .sort(() => Math.random() - 0.5).slice(0, 6);
+  $("orientGrid").innerHTML = candidates.map((id) =>
+    `<button class="orient-item" data-o="${id}">${ITEM_PLACEHOLDER}${itemOf(id).name}</button>`).join("");
+  document.querySelectorAll("[data-o]").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      if (brain.reg[btn.dataset.o] || Object.keys(brain.reg).length >= 3) return;
+      openTeach(btn.dataset.o, "orient");
+    }));
+  $("orient").classList.remove("hidden");
+  Sound.robo(6);
+}
+function orientAfterTeach(itemId) {
+  const cnt = Object.keys(brain.reg).length;
+  $("orientCnt").textContent = cnt;
+  const btn = document.querySelector(`[data-o="${itemId}"]`);
+  if (btn) { btn.classList.add("taught"); btn.disabled = true; }
+  if (cnt >= 3) {
+    document.querySelectorAll("[data-o]").forEach((b) => (b.disabled = true));
+    setTimeout(() => {
+      $("orientTeach").classList.add("hidden");
+      $("orientPolicy").classList.remove("hidden");
+      renderPolicyRow($("orientPolicyRow"), () => { $("orientGo").disabled = !brain.policy; });
+      $("orientGo").disabled = !brain.policy;
+      Sound.robo(5);
+    }, 550);
+  }
+}
+$("orientGo").addEventListener("click", () => {
+  $("orient").classList.add("hidden");
+  phase = "c1"; save();
+  playChallenge();
+});
+
+/* ── 튜토리얼 대사 시퀀스 ── */
+const C2_LINES = [
+  "아는 애들은 자신 있었는데요… 처음 보는 게 너무 많았어요. 😵",
+  "저 한 번에 3개밖에 못 외우잖아요. 저 많은 걸 언제 다 배워요… 이제 방법이 없어요…",
+  "…잠깐만요. 콜라캔이랑 사이다캔이랑 통조림… 다 반짝이고 통 모양이네요?",
+  "하나씩 말고, 닮은 점으로 배우면 안 될까요?! 수첩에 [📐 규칙] 페이지를 만들었어요! ✨",
+];
+function playDialogue(lines, done) {
+  let i = 0;
+  $("dlgAvatar").innerHTML = AI_SVG;
+  const show = () => { $("dlgText").textContent = lines[i]; Sound.robo(syl(lines[i])); };
+  $("dlg").classList.remove("hidden");
+  show();
+  const card = $("dlg");
+  const handler = () => {
+    i += 1;
+    if (i < lines.length) show();
+    else { card.removeEventListener("click", handler); $("dlg").classList.add("hidden"); done(); }
+  };
+  card.addEventListener("click", handler);
+}
+
+/* ── 수첩 ── */
 function renderItemsPane() {
   $("itemCols").innerHTML = Object.keys(CATS).map((cat) => {
     const chips = Object.keys(brain.reg)
@@ -145,10 +344,8 @@ function renderItemsPane() {
     : `<b>모든 물건을 다 외웠어요! 🎉</b>`;
 }
 
-/* ── 수첩: 규칙 탭 ── */
 let selFeats = [];
 function renderFeatsPane() {
-  // 규칙 조립기
   $("ruleChips").innerHTML = Object.keys(FEATURES).map((f) =>
     `<span class="chip ${selFeats.includes(f) ? "sel" : ""}" data-rf="${f}">${FEATURES[f].icon} ${FEATURES[f].name}</span>`).join("");
   document.querySelectorAll("[data-rf]").forEach((ch) =>
@@ -158,7 +355,6 @@ function renderFeatsPane() {
         : selFeats.length < 3 ? [...selFeats, f] : selFeats;
       renderFeatsPane();
     }));
-  // 미리보기: 고른 특징을 전부 가진, 이미 외운 물건들 (근거 확인)
   if (selFeats.length) {
     const known = Object.keys(brain.reg).filter((id) =>
       ITEMS[id] && selFeats.every((f) => itemOf(id).feats.includes(f)));
@@ -172,7 +368,6 @@ function renderFeatsPane() {
   }
   renderRuleCards();
 }
-
 function renderRuleCards() {
   $("slotGauge").textContent = `머리 용량 ${brain.rules.length}/${RULE_SLOTS}`;
   $("ruleCards").innerHTML = brain.rules.map((r, i) => {
@@ -184,56 +379,129 @@ function renderRuleCards() {
   document.querySelectorAll("[data-rd]").forEach((b) =>
     b.addEventListener("click", () => { removeRule(brain, Number(b.dataset.rd)); save(); renderFeatsPane(); }));
 }
-
 $("ruleAdd").addEventListener("click", () => {
   if (!selFeats.length) return;
   const res = addRule(brain, selFeats, $("ruleCat").value);
   if (!res.ok) {
-    alert(res.reason === "slots"
-      ? `재활용이 머리에는 규칙이 ${RULE_SLOTS}개까지만 들어가요! 덜 쓰는 규칙을 지워 주세요.`
+    aiAlert(res.reason === "slots"
+      ? `제 머리에는 규칙이 ${RULE_SLOTS}개까지만 들어가요! 덜 쓰는 규칙을 지워 주세요.`
       : "이미 같은 특징 조합의 규칙이 있어요!");
     return;
   }
+  Sound.learn();
   selFeats = []; save(); renderFeatsPane();
 });
 
 /* ── 방침 ── */
 const POLICIES = { pass: "🙂 일단 통과", deny: "🛑 일단 반려", guess: "🎲 찍어볼게" };
-function renderPolicy() {
-  $("policyRow").innerHTML = Object.keys(POLICIES).map((k) =>
+function renderPolicyRow(container, onPick) {
+  container.innerHTML = Object.keys(POLICIES).map((k) =>
     `<span class="chip pol ${brain.policy === k ? "sel" : ""}" data-pol="${k}">${POLICIES[k]}</span>`).join("");
-  document.querySelectorAll("[data-pol]").forEach((ch) =>
-    ch.addEventListener("click", () => { brain.policy = ch.dataset.pol; save(); renderPolicy(); }));
+  container.querySelectorAll("[data-pol]").forEach((ch) =>
+    ch.addEventListener("click", () => {
+      brain.policy = ch.dataset.pol; save();
+      renderPolicyRow(container, onPick);
+      if (onPick) onPick();
+    }));
 }
 
-/* ── 수첩 열기/탭 ── */
+/* ── 수첩 열기 (규칙 탭은 free부터) ── */
 function openNotebook() {
-  renderItemsPane(); renderFeatsPane(); renderPolicy();
+  renderItemsPane();
+  const locked = phase !== "free";
+  $("tabFeats").classList.toggle("locked", locked);
+  $("tabFeats").textContent = locked ? "🔒 규칙" : "📐 규칙";
+  if (!locked) renderFeatsPane();
+  renderPolicyRow($("policyRow"));
+  switchTab(true);
   $("nbOverlay").classList.remove("hidden");
 }
 $("tabItems").addEventListener("click", () => switchTab(true));
-$("tabFeats").addEventListener("click", () => switchTab(false));
+$("tabFeats").addEventListener("click", () => {
+  if (phase !== "free") { aiAlert("규칙이요…? 아직은 낱개로 외우는 것밖에 못 해요…"); return; }
+  switchTab(false);
+});
 function switchTab(items) {
   $("tabItems").classList.toggle("active", items);
-  $("tabFeats").classList.toggle("active", !items);
+  $("tabFeats").classList.toggle("active", !items && phase === "free");
   $("paneItems").classList.toggle("hidden", !items);
-  $("paneFeats").classList.toggle("hidden", items);
+  $("paneFeats").classList.toggle("hidden", items || phase !== "free");
 }
 $("nbClose").addEventListener("click", () => { $("nbOverlay").classList.add("hidden"); renderHome(); });
 $("nbOverlay").addEventListener("click", (e) => { if (e.target === $("nbOverlay")) { $("nbOverlay").classList.add("hidden"); renderHome(); } });
 
-/* ── 배선 ── */
-$("todaySel").innerHTML = Object.keys(CATS).filter((c) => c !== "trash")
-  .map((c) => `<option value="${c}">오늘: ${CATS[c]}</option>`).join("");
-$("ruleCat").innerHTML = Object.keys(CATS).map((c) => `<option value="${c}">${CATS[c]}</option>`).join("");
-$("challengeBtn").addEventListener("click", runNow);
-$("notebookBtn").addEventListener("click", openNotebook);
+/* ── 홈 ── */
+function renderHome() {
+  const tag = {
+    orient: "신입 AI 재활용이가 출근을 기다리고 있어요",
+    c1: "재활용이의 첫 근무! 수첩에 적어준 것만 나올 거예요",
+    c2: "이번엔 새로운 주민들이 온다는 소문이…",
+    free: "수첩을 튜닝하고, 도전으로 실력을 확인하세요",
+  }[phase];
+  $("homeTag").textContent = tag;
+  $("challengeBtn").textContent =
+    phase === "orient" ? "🤖 재활용이 만나기" :
+    phase === "c1" ? "🚛 첫 도전!" :
+    phase === "c2" ? "🚛 도전 2" : "🚛 도전 시작!";
+  const best = history.length ? Math.max(...history.map((h) => h.score)) : null;
+  const last = history[history.length - 1];
+  $("homeStats").innerHTML = [
+    `📒 외운 물건 ${Object.keys(brain.reg).length}개` + (phase === "free" ? ` · 📐 규칙 ${brain.rules.length}/${RULE_SLOTS}` : ""),
+    history.length ? `🚛 도전 ${history.length}회 · 최고 <b style="color:var(--green-deep)">${best}점</b> · 최근 ${last.score}점` : "",
+  ].filter(Boolean).join("<br/>");
+}
+
+/* ── 정산 버튼: 단계 전환 ── */
+$("reportNext").addEventListener("click", () => {
+  if (phase === "c1") {
+    phase = "c2"; save();
+    $("report").classList.add("hidden");
+    $("home").classList.remove("hidden");
+    renderHome();
+  } else if (phase === "c2") {
+    playDialogue(C2_LINES, () => {
+      phase = "free"; save();
+      Sound.learn();
+      $("report").classList.add("hidden");
+      openNotebook();
+      switchTab(false); // 규칙 탭 바로 보여주기
+    });
+  } else {
+    $("report").classList.add("hidden");
+    playChallenge();
+  }
+});
+$("reportHome").addEventListener("click", () => {
+  $("report").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  renderHome();
+});
 $("reportNotebook").addEventListener("click", openNotebook);
-$("reportRetry").addEventListener("click", runNow);
-$("reportHome").addEventListener("click", () => { $("report").classList.add("hidden"); $("home").classList.remove("hidden"); renderHome(); });
+
+/* ── 근무 씬 컨트롤 ── */
+$("speedBtn").addEventListener("click", () => {
+  speed = speed === 1 ? 0.45 : 1;
+  $("speedBtn").textContent = speed === 1 ? "⏩ 보통" : "⏩⏩ 빠름";
+});
+$("skipBtn").addEventListener("click", () => { skipAll = true; });
+
+/* ── 배선 ── */
+$("ruleCat").innerHTML = Object.keys(CATS).map((c) => `<option value="${c}">${CATS[c]}</option>`).join("");
+$("challengeBtn").addEventListener("click", () => {
+  if (phase === "orient") openOrient();
+  else playChallenge();
+});
+$("notebookBtn").addEventListener("click", () => { Sound.ready(); openNotebook(); });
 $("resetBtn").addEventListener("click", () => {
-  if (!confirm("외운 물건, 규칙, 방침, 도전 기록을 모두 지울까요?")) return;
-  localStorage.removeItem(BRAIN_KEY); localStorage.removeItem(HIST_KEY); localStorage.removeItem("rv2-meta");
+  if (!confirm("외운 물건, 규칙, 방침, 도전 기록을 모두 지우고 처음부터 시작할까요?")) return;
+  [BRAIN_KEY, HIST_KEY, PHASE_KEY, "rv2-meta"].forEach((k) => localStorage.removeItem(k));
   location.reload();
 });
+if (new URLSearchParams(location.search).get("reset")) {
+  [BRAIN_KEY, HIST_KEY, PHASE_KEY, "rv2-meta"].forEach((k) => localStorage.removeItem(k));
+  history = []; phase = "orient";
+  Object.keys(brain.reg).forEach((k) => delete brain.reg[k]);
+  brain.rules.length = 0; brain.policy = null;
+  window.history.replaceState(null, "", location.pathname);
+}
 renderHome();
