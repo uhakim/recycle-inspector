@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>물건 도감 — 검수용</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"Pretendard","Apple SD Gothic Neo",system-ui,sans-serif; background:#cfe6de; color:#2e3947; padding:14px; }
+  h1 { font-size:1.05rem; margin-bottom:2px; }
+  .note { font-size:.76rem; color:#6b7686; margin-bottom:10px; font-weight:600; }
+  h2 { font-size:.9rem; margin:14px 0 6px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:8px; }
+  .card { background:#fffdf4; border:2px solid #2e3947; border-radius:12px; padding:7px 4px; text-align:center; }
+  .card svg { width:62px; height:62px; }
+  .nm { display:block; font-size:.7rem; font-weight:800; }
+  .ft { display:block; font-size:.62rem; margin-top:1px; }
+</style>
+</head>
+<body>
+<h1>🗂 물건 도감 (100종) — 검수용</h1>
+<p class="note">그림과 아래 속성 아이콘이 어울리는지 확인해 주세요. 색 아이콘(🔴🔵🟡)이 있으면 그림도 그 색이어야 합니다.</p>
+<div id="root"></div>
+<script type="module">
+import { CATS, FEATURES, ITEMS } from "./data.js?v=12";
+import { ART } from "./art.js?v=12";
+const root = document.getElementById("root");
+for (const cat of Object.keys(CATS)) {
+  const ids = Object.keys(ITEMS).filter((id) => ITEMS[id][1] === cat);
+  root.insertAdjacentHTML("beforeend", `<h2>${CATS[cat]} (${ids.length})</h2>
+    <div class="grid">${ids.map((id) => `
+      <div class="card">${ART[id]}<span class="nm">${ITEMS[id][0]}</span>
+        <span class="ft">${ITEMS[id][3].map((f) => FEATURES[f].icon).join("")}</span></div>`).join("")}</div>`);
+}
+</script>
+</body>
+</html>
