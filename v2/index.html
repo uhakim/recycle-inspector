@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>분리수거 검사관 v2</title>
-<link rel="stylesheet" href="./style.css?v=12" />
+<link rel="stylesheet" href="./style.css?v=13" />
 </head>
 <body>
 <div id="app">
@@ -132,6 +132,36 @@
     </div>
   </section>
 
+  <!-- ══════ 학생 정보 (반·번호 — 로그인 아님) ══════ -->
+  <div id="who" class="overlay hidden">
+    <div class="teach-card">
+      <div class="teach-name">🙋 몇 반 몇 번이에요?</div>
+      <p class="sub">결과 기록에 쓰여요. 이 기기에만 저장됩니다.</p>
+      <div class="row center">
+        <input id="whoCls" type="number" inputmode="numeric" min="1" max="20" placeholder="반" class="who-in" />
+        <span style="font-weight:900">반</span>
+        <input id="whoNum" type="number" inputmode="numeric" min="1" max="40" placeholder="번호" class="who-in" />
+        <span style="font-weight:900">번</span>
+      </div>
+      <button id="whoGo" class="small" style="margin-top:14px">시작하기!</button>
+    </div>
+  </div>
+
+  <!-- ══════ 학생 정보 (반·번호 — 로그인 아님) ══════ -->
+  <div id="who" class="overlay hidden">
+    <div class="teach-card">
+      <div class="teach-name">🙋 몇 반 몇 번이에요?</div>
+      <p class="sub">결과 기록에 쓰여요. 이 기기에만 저장됩니다.</p>
+      <div class="row center">
+        <input id="whoCls" type="number" inputmode="numeric" min="1" max="20" placeholder="반" class="who-in" />
+        <span style="font-weight:900">반</span>
+        <input id="whoNum" type="number" inputmode="numeric" min="1" max="40" placeholder="번호" class="who-in" />
+        <span style="font-weight:900">번</span>
+      </div>
+      <button id="whoGo" class="small" style="margin-top:14px">시작하기!</button>
+    </div>
+  </div>
+
   <!-- ══════ 오리엔테이션 ══════ -->
   <div id="orient" class="overlay hidden">
     <div class="nb-card">
@@ -227,6 +257,6 @@
   </div>
 
 </div>
-<script type="module" src="./game.js?v=12"></script>
+<script type="module" src="./game.js?v=13"></script>
 </body>
 </html>

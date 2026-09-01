@@ -462,3 +462,13 @@ select {
 .rule-fold { margin-top: 10px; }
 .rule-fold summary { font-size: .82rem; font-weight: 800; color: var(--sub); cursor: pointer; }
 .rule-fold .rule-report { margin-top: 6px; }
+
+.who-in {
+  width: 76px; font-family: inherit; font-size: 1.1rem; font-weight: 800; text-align: center;
+  padding: 10px 6px; border: 2px solid var(--ink); border-radius: 11px;
+}
+
+.who-in {
+  width: 76px; font-family: inherit; font-size: 1.1rem; font-weight: 800; text-align: center;
+  padding: 10px 6px; border: 2px solid var(--ink); border-radius: 11px;
+}

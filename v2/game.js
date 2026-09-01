@@ -1,12 +1,12 @@
 /* ═══════════ 분리수거 검사관 v2 — 3단계: 서사(튜토리얼) + 근무 씬 연출 ═══════════ */
 
-import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=12";
+import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=13";
 import {
   emptyBrain, addRule, removeRule, runChallenge, itemOf,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
-} from "./engine.js?v=12";
-import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=12";
-import { ART } from "./art.js?v=12";
+} from "./engine.js?v=13";
+import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=13";
+import { ART } from "./art.js?v=13";
 const art = (id) => ART[id] || ITEM_PLACEHOLDER;
 
 const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
@@ -204,11 +204,45 @@ async function playChallenge() {
   renderReport();
   $("report").classList.remove("hidden");
   if (result.score === 100) Sound.good();
+  autoSubmit(result.score, history.length);
 }
 
-/* ── 훈련 기록 (튜닝 히스토리) ── */
-// 구글폼 연동: 유하님이 폼을 만들면 url과 entry ID만 채우면 됨
-const FORM = { url: "", entries: { tries: "", best: "", rules: "", policy: "" } };
+/* ── 학생 정보 + 구글폼 자동 전송 ── */
+// 유하님이 "미리 채워진 링크"를 주면 아래 id와 entries만 채우면 활성화됨
+const FORM = { id: "", entries: { cls: "", num: "", run: "", score: "", rules: "" } };
+const STU_KEY = "rv2-student";
+let student = load(STU_KEY, null);
+
+function askWho() {
+  if (student) return;
+  $("who").classList.remove("hidden");
+}
+$("whoGo").addEventListener("click", () => {
+  const cls = $("whoCls").value.trim(), num = $("whoNum").value.trim();
+  if (!cls || !num) { aiAlert("반과 번호를 적어주세요!"); return; }
+  student = { cls, num };
+  localStorage.setItem(STU_KEY, JSON.stringify(student));
+  $("who").classList.add("hidden");
+  Sound.good();
+});
+
+// 도전이 끝날 때마다 조용히 자동 전송 (성공 확인 불가 — 수동 버튼·활동지가 백업)
+function autoSubmit(score, runNo) {
+  if (!FORM.id || !student) return;
+  try {
+    const body = new URLSearchParams();
+    body.set(FORM.entries.cls, student.cls);
+    body.set(FORM.entries.num, student.num);
+    body.set(FORM.entries.run, runNo);
+    body.set(FORM.entries.score, score);
+    body.set(FORM.entries.rules, brain.rules.map((r) => r.feats.map((f) => FEATURES[f].name).join("+") + "→" + CATS[r.cat]).join(" / ") || "(규칙 없음)");
+    fetch(`https://docs.google.com/forms/d/e/${FORM.id}/formResponse`, {
+      method: "POST", mode: "no-cors",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString(),
+    });
+  } catch (e) { /* 무음 실패 허용 */ }
+}
 
 const ruleKey = (r) => [...r.f].sort().join("+") + "→" + r.c;
 const ruleLabel = (r) => r.f.map((f) => FEATURES[f].icon + FEATURES[f].name).join("+") + "→" + CATS[r.c];
@@ -289,16 +323,16 @@ function renderHistory() {
     `① 점수가 가장 많이 오른 건 몇 회차? 그때 무엇을 바꿨나요?<br/>` +
     `② 점수를 떨어뜨린 규칙이 있었나요? 왜 그랬을까요?<br/>` +
     `→ 활동지에 옮겨 적어 보세요!`;
-  // 구글폼
-  if (FORM.url) {
+  // 구글폼 수동 제출 (백업 경로)
+  if (FORM.id) {
     $("formBtn").classList.remove("hidden");
     $("formBtn").onclick = () => {
-      const q = new URLSearchParams();
-      if (FORM.entries.tries) q.set(FORM.entries.tries, history.length);
-      if (FORM.entries.best) q.set(FORM.entries.best, best);
-      if (FORM.entries.rules) q.set(FORM.entries.rules, (bh.rulesSnap || []).map(ruleLabel).join(" / "));
-      if (FORM.entries.policy) q.set(FORM.entries.policy, bh.policy);
-      window.open(`${FORM.url}?usp=pp_url&${q.toString()}`, "_blank");
+      const q = new URLSearchParams({ usp: "pp_url" });
+      if (student) { q.set(FORM.entries.cls, student.cls); q.set(FORM.entries.num, student.num); }
+      q.set(FORM.entries.run, history.length);
+      q.set(FORM.entries.score, best);
+      q.set(FORM.entries.rules, (bh.rulesSnap || []).map(ruleLabel).join(" / "));
+      window.open(`https://docs.google.com/forms/d/e/${FORM.id}/viewform?${q.toString()}`, "_blank");
     };
   } else {
     $("formBtn").classList.add("hidden");
@@ -783,11 +817,12 @@ $("humanBtn").addEventListener("click", runHumanShift);
 $("notebookBtn").addEventListener("click", () => { Sound.ready(); openNotebook(); });
 $("resetBtn").addEventListener("click", () => {
   if (!confirm("외운 물건, 규칙, 방침, 도전 기록을 모두 지우고 처음부터 시작할까요?")) return;
-  [BRAIN_KEY, HIST_KEY, PHASE_KEY, HB_KEY, "rv2-meta"].forEach((k) => localStorage.removeItem(k));
+  [BRAIN_KEY, HIST_KEY, PHASE_KEY, HB_KEY, STU_KEY, "rv2-meta"].forEach((k) => localStorage.removeItem(k));
   location.reload();
 });
 if (new URLSearchParams(location.search).get("reset")) {
-  [BRAIN_KEY, HIST_KEY, PHASE_KEY, HB_KEY, "rv2-meta"].forEach((k) => localStorage.removeItem(k));
+  [BRAIN_KEY, HIST_KEY, PHASE_KEY, HB_KEY, STU_KEY, "rv2-meta"].forEach((k) => localStorage.removeItem(k));
+  student = null;
   humanBest = null;
   history = []; phase = "orient";
   Object.keys(brain.reg).forEach((k) => delete brain.reg[k]);
@@ -795,3 +830,4 @@ if (new URLSearchParams(location.search).get("reset")) {
   window.history.replaceState(null, "", location.pathname);
 }
 renderHome();
+askWho();
