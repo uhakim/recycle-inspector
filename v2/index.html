@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>분리수거 검사관 v2</title>
-<link rel="stylesheet" href="./style.css?v=10" />
+<link rel="stylesheet" href="./style.css?v=11" />
 </head>
 <body>
 <div id="app">
@@ -106,22 +106,28 @@
   <!-- ══════ 정산 ══════ -->
   <section id="report" class="screen hidden">
     <div class="report-card">
-      <h2>🚛 도전 결과</h2>
-      <div id="aiBanner" class="ai-banner hidden"></div>
-      <div class="score-row"><span id="score" class="score-big">0점</span>
-        <span id="scoreSub" class="cnt"></span></div>
-      <div id="srcStats" class="src-stats"></div>
-      <div id="teachZone">
-        <div class="wrong-title">❌ 재활용이가 틀린 것 — 눌러서 가르쳐 주세요
+      <div class="hero">
+        <div id="heroAvatar" class="hero-avatar"></div>
+        <div class="hero-body">
+          <div class="score-row"><span id="score" class="score-big">0점</span></div>
+          <div id="aiBanner" class="hero-say"></div>
+        </div>
+      </div>
+      <div id="scoreSub" class="cnt sub-line"></div>
+      <div id="srcStats" class="cnt sub-line"></div>
+      <div id="teachZone" class="teach-zone">
+        <div class="wrong-title">❌ 틀린 것 가르치기
           <span id="teachBudget" class="budget"></span></div>
         <div id="wrongList" class="wrong-list"></div>
-        <div id="ruleReport" class="rule-report"></div>
       </div>
-      <div class="row center" style="margin-top:12px">
-        <button id="reportHist" class="big ghost">📈 기록</button>
-        <button id="reportNotebook" class="big ghost">📒 수첩 튜닝</button>
-        <button id="reportNext" class="big">🚛 다시 도전!</button>
-        <button id="reportHome" class="big ghost">🏠</button>
+      <details class="rule-fold"><summary>📐 규칙 성적 보기</summary>
+        <div id="ruleReport" class="rule-report"></div>
+      </details>
+      <button id="reportNext" class="big" style="margin-top:14px">🚛 다시 도전!</button>
+      <div class="row center" style="margin-top:10px">
+        <button id="reportNotebook" class="mini-btn">📒 수첩</button>
+        <button id="reportHist" class="mini-btn">📈 기록</button>
+        <button id="reportHome" class="mini-btn">🏠 홈</button>
       </div>
     </div>
   </section>
@@ -221,6 +227,6 @@
   </div>
 
 </div>
-<script type="module" src="./game.js?v=10"></script>
+<script type="module" src="./game.js?v=11"></script>
 </body>
 </html>

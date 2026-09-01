@@ -442,3 +442,23 @@ select {
   text-shadow: 0 4px 12px rgba(0,0,0,.25);
 }
 @keyframes judgePop { 0% { opacity: 0; transform: scale(2.2); } 55% { opacity: 1; transform: scale(.95); } 100% { opacity: 1; transform: scale(1); } }
+
+
+/* ── 정산 개편: 히어로 + 위계 ── */
+.hero { display: flex; gap: 12px; align-items: center; }
+.hero-avatar { flex: 0 0 76px; }
+.hero-avatar svg { width: 76px; }
+.hero-body { flex: 1; }
+.hero-say {
+  margin-top: 4px; background: #eaf6fb; border: 2px solid #79b7d4;
+  border-radius: 12px 12px 12px 4px; padding: 7px 11px;
+  font-size: .84rem; font-weight: 700; line-height: 1.45;
+}
+.sub-line { display: block; margin-top: 7px; }
+.teach-zone {
+  margin-top: 12px; background: #fdf6ee; border: 2px dashed var(--red);
+  border-radius: 12px; padding: 10px;
+}
+.rule-fold { margin-top: 10px; }
+.rule-fold summary { font-size: .82rem; font-weight: 800; color: var(--sub); cursor: pointer; }
+.rule-fold .rule-report { margin-top: 6px; }

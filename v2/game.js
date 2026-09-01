@@ -1,12 +1,12 @@
 /* ═══════════ 분리수거 검사관 v2 — 3단계: 서사(튜토리얼) + 근무 씬 연출 ═══════════ */
 
-import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=10";
+import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=11";
 import {
   emptyBrain, addRule, removeRule, runChallenge, itemOf,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
-} from "./engine.js?v=10";
-import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=10";
-import { ART } from "./art.js?v=10";
+} from "./engine.js?v=11";
+import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=11";
+import { ART } from "./art.js?v=11";
 const art = (id) => ART[id] || ITEM_PLACEHOLDER;
 
 const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
@@ -405,6 +405,7 @@ async function runHumanShift() {
 }
 
 function renderHumanReport(acc, ok, bad) {
+  $("heroAvatar").innerHTML = `<div style="font-size:3.2rem;text-align:center">🧑</div>`;
   $("score").textContent = `${acc}점`;
   $("scoreSub").textContent = `🧑 내가 검사관 · 봉투 ${ok + bad}개 (✅${ok} ❌${bad})`;
   $("srcStats").classList.add("hidden");
@@ -423,6 +424,7 @@ function renderHumanReport(acc, ok, bad) {
 /* ── 정산 ── */
 function renderReport() {
   const r = lastResult;
+  $("heroAvatar").innerHTML = AI_SVG;
   $("teachZone").classList.remove("hidden");
   $("srcStats").classList.remove("hidden");
   $("reportNotebook").classList.remove("hidden");
@@ -438,15 +440,18 @@ function renderReport() {
   if (phase === "c1") {
     banner.textContent = r.score === 100
       ? "🤖 수첩에 적힌 애들이라 다 알아봤어요! 저 잘하죠? 😊"
-      : "🤖 어라…? 수첩에 적힌 대로 했는데 틀렸대요… 혹시 수첩이 잘못 적힌 걸까요? 😅 (아래에서 고쳐 주세요!)";
+      : "어라…? 수첩에 적힌 대로 했는데 틀렸대요… 혹시 수첩이 잘못 적힌 걸까요? 😅 (아래에서 고쳐 주세요!)";
     banner.classList.remove("hidden");
   } else if (phase === "c2") {
-    banner.textContent = "🤖 어어… 처음 보는 게 너무 많았어요… 😵";
+    banner.textContent = "어어… 처음 보는 게 너무 많았어요… 😵";
     banner.classList.remove("hidden");
-  } else if (r.score === 100) {
-    banner.textContent = "🤖 완벽했어요! 수첩이 최고예요! ✨";
-    banner.classList.remove("hidden");
-  } else banner.classList.add("hidden");
+  } else {
+    banner.textContent =
+      r.score === 100 ? "완벽했어요! 수첩이 최고예요! ✨"
+      : r.score >= 80 ? "꽤 잘했죠? 가르쳐 주신 덕분이에요!"
+      : r.score >= 55 ? "으음… 더 배우면 잘할 수 있어요!"
+      : "오늘은 어려웠어요… 가르쳐 주세요! 🙏";
+  }
   renderWrongList();
   $("ruleReport").innerHTML = brain.rules.length
     ? "📐 규칙 성적: " + brain.rules.map((rule, i) => {
