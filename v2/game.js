@@ -1,12 +1,12 @@
 /* ═══════════ 분리수거 검사관 v2 — 3단계: 서사(튜토리얼) + 근무 씬 연출 ═══════════ */
 
-import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=15";
+import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=16";
 import {
   emptyBrain, addRule, removeRule, runChallenge, itemOf,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
-} from "./engine.js?v=15";
-import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=15";
-import { ART } from "./art.js?v=15";
+} from "./engine.js?v=16";
+import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=16";
+import { ART } from "./art.js?v=16";
 const art = (id) => ART[id] || ITEM_PLACEHOLDER;
 
 const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
@@ -212,7 +212,7 @@ async function playChallenge() {
 const FORM = {
   id: "1FAIpQLSdI34u9OR5ZajrhL8X45GlXP2SZTcPKlTvJ01jAwXCXbpm9_A",
   entries: {
-    grade: "", cls: "entry.478214253", num: "entry.1171834626",
+    grade: "entry.1995555275", cls: "entry.478214253", num: "entry.1171834626",
     run: "entry.983304353", score: "entry.1506927311", rules: "entry.900801293",
   },
 };
