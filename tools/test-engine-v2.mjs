@@ -1,9 +1,9 @@
 /* 판정 엔진 v2 단위 테스트 + 설계 곡선 시뮬 — node tools/test-engine-v2.mjs */
-import { ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "../v2/data.js?v=20";
+import { ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "../v2/data.js?v=21";
 import {
   emptyBrain, addRule, classifyItem, runChallenge,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags, itemOf,
-} from "../v2/engine.js?v=20";
+} from "../v2/engine.js?v=21";
 
 let fails = 0;
 const ok = (cond, msg) => { console.log((cond ? "PASS" : "FAIL") + "  " + msg); if (!cond) fails++; };
@@ -49,7 +49,7 @@ const seeded = (seed) => () => {
 {
   const b = emptyBrain();
   ok(classifyItem("basin", b).cat === "unknown", "모르는 물건 → unknown (분류를 지어내지 않음)");
-  const { bagVerdict } = await import("../v2/engine.js?v=20");
+  const { bagVerdict } = await import("../v2/engine.js?v=21");
   ok(bagVerdict([{ cat: "unknown" }], "can").pass === true, "모르는 봉투 → 무조건 통과");
   ok(bagVerdict([{ cat: "can" }, { cat: "unknown" }], "can").pass === true, "아는 것 다 맞고 + 모름 → 통과");
   ok(bagVerdict([{ cat: "paper" }, { cat: "unknown" }], "can").pass === false, "아는 것이 오늘 것 아니면 확실 반려");

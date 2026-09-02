@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>분리수거 검사관 v2</title>
-<link rel="stylesheet" href="./style.css?v=20" />
+<link rel="stylesheet" href="./style.css?v=21" />
 </head>
 <body>
 <div id="app">
@@ -119,6 +119,12 @@
         <div class="wrong-title">❌ 틀린 것 가르치기
           <span id="teachBudget" class="budget"></span></div>
         <div id="wrongList" class="wrong-list"></div>
+      </div>
+      <div id="obsCard" class="obs-card hidden">
+        <div class="obs-title">🔎 오늘의 관찰 <span class="cnt">— 특징을 누르면 바로 규칙을 만들 수 있어요</span></div>
+        <div id="obsToday"></div>
+        <div id="obsPairs"></div>
+        <div id="obsMissed"></div>
       </div>
       <details class="rule-fold"><summary>📐 규칙 성적 보기</summary>
         <div id="ruleReport" class="rule-report"></div>
@@ -244,6 +250,6 @@
   </div>
 
 </div>
-<script type="module" src="./game.js?v=20"></script>
+<script type="module" src="./game.js?v=21"></script>
 </body>
 </html>

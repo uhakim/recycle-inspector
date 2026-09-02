@@ -1,12 +1,12 @@
 /* ═══════════ 분리수거 검사관 v2 — 3단계: 서사(튜토리얼) + 근무 씬 연출 ═══════════ */
 
-import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=20";
+import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=21";
 import {
   emptyBrain, addRule, removeRule, runChallenge, itemOf,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
-} from "./engine.js?v=20";
-import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=20";
-import { ART } from "./art.js?v=20";
+} from "./engine.js?v=21";
+import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=21";
+import { ART } from "./art.js?v=21";
 const art = (id) => ART[id] || ITEM_PLACEHOLDER;
 
 const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
@@ -461,6 +461,7 @@ async function runHumanShift() {
 }
 
 function renderHumanReport(acc, ok, bad) {
+  $("obsCard").classList.add("hidden");
   $("heroAvatar").innerHTML = `<div style="font-size:3.2rem;text-align:center">🧑</div>`;
   $("score").textContent = `${acc}점`;
   $("scoreSub").textContent = `🧑 내가 검사관 · 봉투 ${ok + bad}개 (✅${ok} ❌${bad})`;
@@ -475,6 +476,87 @@ function renderHumanReport(acc, ok, bad) {
     : "😅 오늘은 좀 힘들었네요. 봉투 속을 꼼꼼히 살펴보세요!";
   banner.classList.remove("hidden");
   $("reportNext").textContent = phase === "orient" ? "🤖 이제 재활용이 만나기!" : "🚛 재활용이에게 맡기기";
+}
+
+/* ── 오늘의 관찰 (튜닝 근거) ── */
+function uniqBy(arr, key) { const m = new Map(); arr.forEach((x) => { if (!m.has(key(x))) m.set(key(x), x); }); return [...m.values()]; }
+
+function openRuleBuilder(feats, cat) {
+  selFeats = [...feats];
+  openNotebook();
+  switchTab(false);
+  if (cat) $("ruleCat").value = cat;
+  renderFeatsPane();
+}
+
+function renderObservation() {
+  const r = lastResult;
+  const card = $("obsCard");
+  if (!r || phase !== "free") { card.classList.add("hidden"); return; }
+  const today = r.todayCat;
+  const seen = uniqBy(r.perItem, (p) => p.id);
+  const todayItems = seen.filter((p) => p.truth === today);
+  const otherItems = seen.filter((p) => p.truth !== today);
+  const featRow = (f, n, total, counter, cat, feats) => {
+    const pct = Math.round((n / total) * 100);
+    const note = counter > 0
+      ? `<span class="obs-warn">⚠ 다른 분류에서도 ${counter}개</span>`
+      : `<span class="obs-good">✔ 오늘 것에만</span>`;
+    return `<button class="obs-row" data-feats="${feats.join(",")}" data-cat="${cat}">
+      <span>${feats.map((x) => FEATURES[x].icon + FEATURES[x].name).join(" + ")}</span>
+      <span class="obs-bar"><i style="width:${pct}%"></i></span>
+      <span class="obs-cnt">${n}/${total}</span>${note}</button>`;
+  };
+  // ① 오늘 배출일 물건들의 공통점 (+ 반례 수)
+  let html = "";
+  if (todayItems.length >= 2) {
+    const cnt = {};
+    todayItems.forEach((p) => itemOf(p.id).feats.forEach((f) => (cnt[f] = (cnt[f] || 0) + 1)));
+    const top = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]).slice(0, 4);
+    html += `<div class="obs-sub">오늘 나온 ${CATS[today]} ${todayItems.length}개의 공통점</div>`;
+    html += top.map((f) => {
+      const counter = otherItems.filter((p) => itemOf(p.id).feats.includes(f)).length;
+      return featRow(f, cnt[f], todayItems.length, counter, today, [f]);
+    }).join("");
+    // ② 추천 조합: 상위 특징 쌍 중 반례가 가장 적은 것
+    const pairs = [];
+    for (let i = 0; i < top.length; i++) for (let j = i + 1; j < top.length; j++) {
+      const a = top[i], b = top[j];
+      const n = todayItems.filter((p) => { const fs = itemOf(p.id).feats; return fs.includes(a) && fs.includes(b); }).length;
+      const counter = otherItems.filter((p) => { const fs = itemOf(p.id).feats; return fs.includes(a) && fs.includes(b); }).length;
+      if (n >= 2) pairs.push({ a, b, n, counter });
+    }
+    pairs.sort((x, y) => (x.counter - y.counter) || (y.n - x.n));
+    if (pairs.length) {
+      const p = pairs[0];
+      html += `<div class="obs-sub">💡 조합하면 더 정확해요</div>` + featRow(null, p.n, todayItems.length, p.counter, today, [p.a, p.b]);
+    }
+  }
+  $("obsToday").innerHTML = html;
+  $("obsPairs").innerHTML = "";
+  // ③ 몰라서 틀린 물건들의 공통점 (분류별)
+  const missed = uniqBy(r.perItem.filter((p) => p.cat === "unknown"), (p) => p.id);
+  let mh = "";
+  if (missed.length >= 2) {
+    const byCat = {};
+    missed.forEach((p) => (byCat[p.truth] = byCat[p.truth] || []).push(p));
+    const groups = Object.keys(byCat).filter((c) => byCat[c].length >= 2)
+      .sort((a, b) => byCat[b].length - byCat[a].length).slice(0, 2);
+    groups.forEach((c) => {
+      const items = byCat[c];
+      const cnt = {};
+      items.forEach((p) => itemOf(p.id).feats.forEach((f) => (cnt[f] = (cnt[f] || 0) + 1)));
+      const best = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0];
+      if (!best || cnt[best] < 2) return;
+      const counter = seen.filter((p) => p.truth !== c && itemOf(p.id).feats.includes(best)).length;
+      mh += `<div class="obs-sub">❓ 몰랐던 ${CATS[c]} ${items.length}개 — 공통점이 있어요</div>` +
+        featRow(best, cnt[best], items.length, counter, c, [best]);
+    });
+  }
+  $("obsMissed").innerHTML = mh;
+  card.classList.toggle("hidden", !html && !mh);
+  card.querySelectorAll(".obs-row").forEach((b) =>
+    b.addEventListener("click", () => openRuleBuilder(b.dataset.feats.split(","), b.dataset.cat)));
 }
 
 /* ── 정산 ── */
@@ -507,7 +589,17 @@ function renderReport() {
       : r.score >= 80 ? "꽤 잘했죠? 가르쳐 주신 덕분이에요!"
       : r.score >= 55 ? "으음… 더 배우면 잘할 수 있어요!"
       : "오늘은 어려웠어요… 가르쳐 주세요! 🙏";
+    // ⑤ 넛지: 규칙이 없거나 점수가 낮으면 관찰을 근거로 규칙을 권한다
+    const missed = uniqBy(r.perItem.filter((p) => p.cat === "unknown"), (p) => p.id);
+    if ((brain.rules.length === 0 || r.score < 60) && missed.length >= 2) {
+      const cnt = {};
+      missed.forEach((p) => itemOf(p.id).feats.forEach((f) => (cnt[f] = (cnt[f] || 0) + 1)));
+      const best = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0];
+      if (best && cnt[best] >= 2)
+        banner.textContent += ` 그런데… ${FEATURES[best].icon}${FEATURES[best].name} 물건이 자꾸 나와요. 규칙으로 만들어 볼까요? 👇`;
+    }
   }
+  renderObservation();
   renderWrongList();
   $("ruleReport").innerHTML = brain.rules.length
     ? "📐 규칙 성적: " + brain.rules.map((rule, i) => {
@@ -804,11 +896,10 @@ $("reportNext").addEventListener("click", () => {
     playDialogue(C2_LINES, () => {
       phase = "free"; save();
       Sound.learn();
-      $("report").classList.add("hidden");
-      $("home").classList.remove("hidden");
-      renderHome();
-      openNotebook();
-      switchTab(false); // 규칙 탭 바로 보여주기
+      // 정산으로 돌아와 "오늘의 관찰" 카드를 보여준다 — 여기서 첫 규칙을 만든다
+      renderReport();
+      $("aiBanner").textContent = "아래 관찰을 보세요! 자꾸 같이 나오는 특징을 누르면 규칙이 돼요 👇";
+      $("reportNext").textContent = "🚛 다시 도전!";
     });
   } else {
     $("report").classList.add("hidden");
