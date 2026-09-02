@@ -2,7 +2,7 @@
    우선순위: 물품 등록(정확 지식) > 특징 규칙(구체성 우선, 동점 불일치=혼란→방침) > 방침
    brain = { reg: {itemId: cat}, rules: [{feats:[...], cat}], policy: "pass"|"deny"|"guess" } */
 
-import { ITEMS, CATS, RULE_SLOTS } from "./data.js?v=16";
+import { ITEMS, CATS, RULE_SLOTS } from "./data.js?v=17";
 
 export const GUESS_CATS = ["paper", "can", "food", "plastic"];
 
@@ -56,14 +56,13 @@ export function classifyItem(itemId, brain) {
    ① 아는 것 중 오늘 배출일이 아닌 게 있으면 → 확실히 반려
    ② 전부 알고 전부 오늘 것 → 통과
    ③ 모르는 게 섞여 있으면 → 방침: pass=통과 쪽 / deny=반려 쪽 / guess=동전 던지기 */
-export function bagVerdict(guesses, todayCat, policy = "guess", rng = Math.random) {
+export function bagVerdict(guesses, todayCat) {
+  // 확실히 틀렸다고 아는 것(오늘 배출일이 아닌 알려진 물건)이 있으면 반려, 그 외엔 통과.
+  // 모르는 물건이 섞여 있어도 통과 — "몰라서 잘못 통과"가 훈련이 필요한 이유가 된다.
   const knownWrong = guesses.some((g) => g.cat !== "unknown" && g.cat !== todayCat);
   if (knownWrong) return { pass: false, reason: "known-wrong" };
   const hasUnknown = guesses.some((g) => g.cat === "unknown");
-  if (!hasUnknown) return { pass: true, reason: "all-known" };
-  if (policy === "pass") return { pass: true, reason: "policy-pass" };
-  if (policy === "deny") return { pass: false, reason: "policy-deny" };
-  return { pass: rng() < 0.5, reason: "policy-coin" };
+  return { pass: true, reason: hasUnknown ? "unknown-pass" : "all-known" };
 }
 
 /* 도전 1회 실행.
@@ -77,7 +76,7 @@ export function runChallenge(bags, brain, todayCat, rng = Math.random) {
 
   for (const [bagIndex, bag] of bags.entries()) {
     const guesses = bag.map((id) => ({ id, ...classifyItem(id, brain) }));
-    const verdict = bagVerdict(guesses, todayCat, brain.policy || "guess", rng);
+    const verdict = bagVerdict(guesses, todayCat);
     const aiPass = verdict.pass;
     const shouldPass = bag.every((id) => itemOf(id).cat === todayCat);
     if (aiPass === shouldPass) okBags += 1;

@@ -1,9 +1,9 @@
 /* 판정 엔진 v2 단위 테스트 + 설계 곡선 시뮬 — node tools/test-engine-v2.mjs */
-import { ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "../v2/data.js";
+import { ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "../v2/data.js?v=17";
 import {
   emptyBrain, addRule, classifyItem, runChallenge,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags, itemOf,
-} from "../v2/engine.js";
+} from "../v2/engine.js?v=17";
 
 let fails = 0;
 const ok = (cond, msg) => { console.log((cond ? "PASS" : "FAIL") + "  " + msg); if (!cond) fails++; };
@@ -45,18 +45,15 @@ const seeded = (seed) => () => {
   ok(!!r.conflict && r.cat === "unknown", `동점 혼란 → 모름 + 충돌 기록 (${JSON.stringify(r.conflict?.cats)})`);
 }
 
-/* ── 4. 모름 + 방침(봉투 단위) ── */
+/* ── 4. 모름 → 무조건 통과 (봉투 단위) ── */
 {
   const b = emptyBrain();
   ok(classifyItem("basin", b).cat === "unknown", "모르는 물건 → unknown (분류를 지어내지 않음)");
-  const { bagVerdict } = await import("../v2/engine.js");
-  const gUnknown = [{ cat: "unknown" }];
-  ok(bagVerdict(gUnknown, "can", "pass").pass === true, "방침 pass → 모르는 봉투 통과");
-  ok(bagVerdict(gUnknown, "can", "deny").pass === false, "방침 deny → 모르는 봉투 반려");
-  const coin = [0, 1, 2, 3, 4, 5].map((i) => bagVerdict(gUnknown, "can", "guess", seeded(40 + i)).pass);
-  ok(coin.includes(true) && coin.includes(false), `방침 guess → 동전 던지기 (${coin.map((x) => x ? "통" : "반").join("")})`);
-  const gMix = [{ cat: "paper" }, { cat: "unknown" }];
-  ok(bagVerdict(gMix, "can", "pass").reason === "known-wrong", "아는 것이 오늘 것 아니면 방침 무관 확실 반려");
+  const { bagVerdict } = await import("../v2/engine.js?v=17");
+  ok(bagVerdict([{ cat: "unknown" }], "can").pass === true, "모르는 봉투 → 무조건 통과");
+  ok(bagVerdict([{ cat: "can" }, { cat: "unknown" }], "can").pass === true, "아는 것 다 맞고 + 모름 → 통과");
+  ok(bagVerdict([{ cat: "paper" }, { cat: "unknown" }], "can").pass === false, "아는 것이 오늘 것 아니면 확실 반려");
+  ok(bagVerdict([{ cat: "can" }, { cat: "can" }], "can").reason === "all-known", "전부 알고 맞음 → all-known 통과");
 }
 
 /* ── 5. 규칙 슬롯 8 제한·중복 방지 ── */

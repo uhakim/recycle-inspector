@@ -1,12 +1,12 @@
 /* ═══════════ 분리수거 검사관 v2 — 3단계: 서사(튜토리얼) + 근무 씬 연출 ═══════════ */
 
-import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=16";
+import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=17";
 import {
   emptyBrain, addRule, removeRule, runChallenge, itemOf,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
-} from "./engine.js?v=16";
-import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=16";
-import { ART } from "./art.js?v=16";
+} from "./engine.js?v=17";
+import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=17";
+import { ART } from "./art.js?v=17";
 const art = (id) => ART[id] || ITEM_PLACEHOLDER;
 
 const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
@@ -161,11 +161,8 @@ async function playChallenge() {
       const verdictLine = {
         "known-wrong": `${CATS[todayCat]} 아닌 게 있어요! 반려!`,
         "all-known": `전부 ${CATS[todayCat]}! 통과입니다!`,
-        "policy-pass": "모르는 게 있지만… 방침대로 통과!",
-        "policy-deny": "모르는 건 못 믿어요. 방침대로 반려!",
-        "policy-coin": `모르겠으니… 동전 던지기! 🎲 ${bag.aiPass ? "통과" : "반려"}!`,
+        "unknown-pass": "모르는 게 있지만… 일단 통과!",
       }[bag.reason] || (bag.aiPass ? "통과입니다!" : "반려!");
-      if (bag.reason === "policy-coin") Sound.dice();
       aiSay(verdictLine);
       await wait(700);
       Sound.stamp();
