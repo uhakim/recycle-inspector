@@ -1,12 +1,12 @@
 /* ═══════════ 분리수거 검사관 v2 — 3단계: 서사(튜토리얼) + 근무 씬 연출 ═══════════ */
 
-import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=18";
+import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=19";
 import {
   emptyBrain, addRule, removeRule, runChallenge, itemOf,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
-} from "./engine.js?v=18";
-import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=18";
-import { ART } from "./art.js?v=18";
+} from "./engine.js?v=19";
+import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=19";
+import { ART } from "./art.js?v=19";
 const art = (id) => ART[id] || ITEM_PLACEHOLDER;
 
 const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
@@ -467,7 +467,7 @@ function renderReport() {
   $("srcStats").classList.remove("hidden");
   $("reportNotebook").classList.remove("hidden");
   $("score").textContent = `${r.score}점`;
-  $("scoreSub").textContent = `물건 ${r.perItem.length}개 · 봉투 정확도 ${Math.round(r.bagAcc * 100)}% · ${history.length}회차`;
+  $("scoreSub").textContent = `물건 ${Math.round(r.itemAcc * 100)}% (60%) + 봉투 판정 ${Math.round(r.bagAcc * 100)}% (40%) · ${history.length}회차`;
   const ruleHits = r.ruleStats.reduce((a, s) => a + s.hits, 0);
   const ruleMiss = r.ruleStats.reduce((a, s) => a + s.misses, 0);
   $("srcStats").innerHTML =

@@ -2,7 +2,7 @@
    우선순위: 물품 등록(정확 지식) > 특징 규칙(구체성 우선, 동점 불일치=혼란→방침) > 방침
    brain = { reg: {itemId: cat}, rules: [{feats:[...], cat}], policy: "pass"|"deny"|"guess" } */
 
-import { ITEMS, CATS, RULE_SLOTS } from "./data.js?v=18";
+import { ITEMS, CATS, RULE_SLOTS } from "./data.js?v=19";
 
 export const GUESS_CATS = ["paper", "can", "food", "plastic"];
 
@@ -93,10 +93,12 @@ export function runChallenge(bags, brain, todayCat, rng = Math.random) {
     }
   }
   const itemAcc = perItem.filter((p) => p.correct).length / perItem.length;
+  const bagAcc = okBags / bags.length;
+  // 점수 = 물건 정확도 60% + 봉투 판정 정확도 40%
   return {
-    bagAcc: okBags / bags.length,
+    bagAcc,
     itemAcc,
-    score: Math.round(itemAcc * 100),
+    score: Math.round((itemAcc * 0.6 + bagAcc * 0.4) * 100),
     perItem, ruleStats, regHits, regMisses, conflictCount,
     bags: bagsOut, todayCat,
   };
