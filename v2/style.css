@@ -490,3 +490,5 @@ select {
 .obs-warn { font-size: .72rem; color: var(--red); font-weight: 800; }
 .obs-good { font-size: .72rem; color: var(--green-deep); font-weight: 800; }
 .obs-none { font-size: .8rem; color: var(--sub); font-weight: 600; }
+
+.obs-row.obs-star { border: 2px solid var(--accent); background: #fff8e6; box-shadow: 0 3px 0 rgba(255,182,72,.45); }

@@ -1,12 +1,12 @@
 /* ═══════════ 분리수거 검사관 v2 — 3단계: 서사(튜토리얼) + 근무 씬 연출 ═══════════ */
 
-import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=21";
+import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=22";
 import {
   emptyBrain, addRule, removeRule, runChallenge, itemOf,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
-} from "./engine.js?v=21";
-import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=21";
-import { ART } from "./art.js?v=21";
+} from "./engine.js?v=22";
+import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=22";
+import { ART } from "./art.js?v=22";
 const art = (id) => ART[id] || ITEM_PLACEHOLDER;
 
 const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
@@ -513,12 +513,7 @@ function renderObservation() {
     const cnt = {};
     todayItems.forEach((p) => itemOf(p.id).feats.forEach((f) => (cnt[f] = (cnt[f] || 0) + 1)));
     const top = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]).slice(0, 4);
-    html += `<div class="obs-sub">오늘 나온 ${CATS[today]} ${todayItems.length}개의 공통점</div>`;
-    html += top.map((f) => {
-      const counter = otherItems.filter((p) => itemOf(p.id).feats.includes(f)).length;
-      return featRow(f, cnt[f], todayItems.length, counter, today, [f]);
-    }).join("");
-    // ② 추천 조합: 상위 특징 쌍 중 반례가 가장 적은 것
+    // ② 추천 조합을 먼저 (맨 위, ⭐): 상위 특징 쌍 중 반례가 가장 적은 것
     const pairs = [];
     for (let i = 0; i < top.length; i++) for (let j = i + 1; j < top.length; j++) {
       const a = top[i], b = top[j];
@@ -529,8 +524,15 @@ function renderObservation() {
     pairs.sort((x, y) => (x.counter - y.counter) || (y.n - x.n));
     if (pairs.length) {
       const p = pairs[0];
-      html += `<div class="obs-sub">💡 조합하면 더 정확해요</div>` + featRow(null, p.n, todayItems.length, p.counter, today, [p.a, p.b]);
+      html += `<div class="obs-sub">⭐ 추천 — 조합하면 더 정확해요</div>` +
+        featRow(null, p.n, todayItems.length, p.counter, today, [p.a, p.b]).replace('class="obs-row"', 'class="obs-row obs-star"');
     }
+    // ① 단일 특징들은 그 아래
+    html += `<div class="obs-sub">오늘 나온 ${CATS[today]} ${todayItems.length}개의 공통점</div>`;
+    html += top.map((f) => {
+      const counter = otherItems.filter((p) => itemOf(p.id).feats.includes(f)).length;
+      return featRow(f, cnt[f], todayItems.length, counter, today, [f]);
+    }).join("");
   }
   $("obsToday").innerHTML = html;
   $("obsPairs").innerHTML = "";
