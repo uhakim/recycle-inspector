@@ -1,15 +1,25 @@
 /* ═══════════ 분리수거 검사관 v2 — 3단계: 서사(튜토리얼) + 근무 씬 연출 ═══════════ */
 
-import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=23";
+import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=24";
 import {
   emptyBrain, addRule, removeRule, runChallenge, itemOf,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
-} from "./engine.js?v=23";
-import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=23";
-import { ART } from "./art.js?v=23";
+} from "./engine.js?v=24";
+import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=24";
+import { ART } from "./art.js?v=24";
 const art = (id) => ART[id] || ITEM_PLACEHOLDER;
 
 const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
+const LESSON_KEY = "rv2-lesson";
+/* 수업용 링크: ?lesson=<key> → 다음 자유 도전 1회가 반 전체 동일한 봉투로 출제됨 (기록·수첩은 그대로) */
+const LESSONS = {
+  exception: { name: "예외 처리", today: "paper", hint: "종이 규칙에 걸리는 영수증·기름 피자박스가 나와요",
+    bags: [["newspaper","flyer","envelope"], ["magazine","receipt","calendar"], ["paperbox","cardboard","pizzabox"],
+           ["notebook","sketchbook","testpaper"], ["storybook","dictionary","receipt"]] },
+  bait: { name: "미끼 특징", today: "can", hint: "빨간색인데 캔이 아닌 물건이 섞여 나와요",
+    bags: [["cola","ketchup","butane"], ["candytin","pringles"], ["cola","flyer","butane"],
+           ["candytin","straw","cola"], ["butane","toycar","cola"]] },
+};
 const $ = (id) => document.getElementById(id);
 
 /* ── 상태 ── */
@@ -56,6 +66,12 @@ function personSay(person) {
 
 /* ── 도전 실행 (연출 포함) ── */
 function prepareRun() {
+  const pending = load(LESSON_KEY, null);
+  if (phase === "free" && pending && LESSONS[pending]) {
+    localStorage.removeItem(LESSON_KEY);
+    const L = LESSONS[pending];
+    return { bags: L.bags.map((b) => [...b]), todayCat: L.today, lesson: pending };
+  }
   if (phase === "c1") {
     const pool = poolTutorial1(brain);
     return { bags: makeBags(pool, "paper", 4), todayCat: "paper" };
@@ -74,7 +90,7 @@ function prepareRun() {
 
 async function playChallenge() {
   Sound.ready();
-  const { bags, todayCat } = prepareRun();
+  const { bags, todayCat, lesson } = prepareRun();
   const result = runChallenge(bags, brain, todayCat);
   lastResult = result;
   skipAll = false;
@@ -198,6 +214,7 @@ async function playChallenge() {
   });
   history.push({
     n: history.length + 1, score: result.score, phase, today: todayCat,
+    lesson: lesson || null,
     policy: brain.policy,
     regIds: Object.keys(brain.reg),
     rulesSnap: brain.rules.map((r) => ({ f: [...r.feats], c: r.cat })),
@@ -313,7 +330,7 @@ function renderHistory() {
     const tut = h.phase !== "free";
     return `<button class="hist-bar ${!tut && h.score === best ? "best" : ""} ${tut ? "tut" : ""} ${i === histSel ? "sel" : ""}"
        data-h="${i}" style="height:${Math.max(14, h.score)}%">
-       ${i === bestIdx ? '<span class="star">⭐</span>' : ""}${h.score}</button>`;
+       ${i === bestIdx ? '<span class="star">⭐</span>' : ""}${h.lesson ? "📌" : ""}${h.score}</button>`;
   }).join("");
   document.querySelectorAll("[data-h]").forEach((b) =>
     b.addEventListener("click", () => { histSel = Number(b.dataset.h); renderHistory(); }));
@@ -990,6 +1007,14 @@ $("resetBtn").addEventListener("click", () => {
   [BRAIN_KEY, HIST_KEY, PHASE_KEY, HB_KEY, STU_KEY, "rv2-meta"].forEach((k) => localStorage.removeItem(k));
   location.reload();
 });
+{
+  const lk = new URLSearchParams(location.search).get("lesson");
+  if (lk && LESSONS[lk]) {
+    localStorage.setItem(LESSON_KEY, JSON.stringify(lk));
+    window.history.replaceState(null, "", location.pathname);
+    setTimeout(() => aiAlert(`📌 선생님 수업 링크! 다음 도전은 「${LESSONS[lk].name}」 봉투로 나와요 (오늘: ${CATS[LESSONS[lk].today]}). ${LESSONS[lk].hint}`), 300);
+  }
+}
 if (new URLSearchParams(location.search).get("reset")) {
   [BRAIN_KEY, HIST_KEY, PHASE_KEY, HB_KEY, STU_KEY, "rv2-meta"].forEach((k) => localStorage.removeItem(k));
   student = null;
