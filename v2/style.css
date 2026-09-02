@@ -492,3 +492,13 @@ select {
 .obs-none { font-size: .8rem; color: var(--sub); font-weight: 600; }
 
 .obs-row.obs-star { border: 2px solid var(--accent); background: #fff8e6; box-shadow: 0 3px 0 rgba(255,182,72,.45); }
+
+/* 수첩: 잘못 가르침 표시 · 본 적 있는 미지 물건 · 잊기 선택 */
+.ichip.warn { color: #b8321f; }
+.sub.warn { color: #b8321f; font-weight: 700; }
+.mq-seen { font-size: .78rem; font-weight: 800; padding: 4px 8px; border-radius: 8px; background: #fff8e6;
+  border: 1.5px dashed #d9a441; color: #6b4b00; cursor: pointer; }
+.forget-list { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0 12px; }
+.forget-chip { font-size: .8rem; font-weight: 800; padding: 6px 10px; border-radius: 9px; border: 2px solid var(--line);
+  background: #fff; cursor: pointer; }
+.forget-chip small { font-weight: 600; opacity: .7; }

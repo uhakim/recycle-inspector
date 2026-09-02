@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>분리수거 검사관 v2</title>
-<link rel="stylesheet" href="./style.css?v=22" />
+<link rel="stylesheet" href="./style.css?v=23" />
 </head>
 <body>
 <div id="app">
@@ -191,6 +191,7 @@
         <p class="sub">재활용이가 <b>낱개로 외운</b> 물건들이에요. 물건을 누르면 속성을 볼 수 있어요.</p>
         <div id="itemCols" class="item-cols"></div>
         <div class="mystery-title">❓ 아직 모르는 물건</div>
+        <p id="mysteryHint" class="sub"></p>
         <div id="mysteryRow" class="mystery-row"></div>
       </div>
       <div id="paneFeats" class="nb-pane hidden">
@@ -227,7 +228,19 @@
       <div id="inspectName" class="teach-name"></div>
       <div id="inspectCat" class="sub"></div>
       <div id="inspectAttrs" class="chips ro"></div>
+      <div id="inspectWarn" class="sub warn hidden"></div>
+      <button id="inspectFix" class="small hidden">✏️ 분류 고치기</button>
       <button id="inspectClose" class="small ghost">닫기</button>
+    </div>
+  </div>
+
+  <!-- ══════ 바꿔 외우기 (자리 바꾸기) ══════ -->
+  <div id="forget" class="overlay hidden">
+    <div class="teach-card">
+      <div class="teach-name">🧠 누구를 잊게 할까요?</div>
+      <p class="sub">새로 외우려면 자리가 필요해요. <b id="forgetNew"></b>을(를) 외우는 대신 잊을 물건을 골라요.</p>
+      <div id="forgetList" class="forget-list"></div>
+      <button id="forgetCancel" class="small ghost">그만두기</button>
     </div>
   </div>
 
@@ -250,6 +263,6 @@
   </div>
 
 </div>
-<script type="module" src="./game.js?v=22"></script>
+<script type="module" src="./game.js?v=23"></script>
 </body>
 </html>

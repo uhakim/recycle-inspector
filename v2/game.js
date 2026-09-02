@@ -1,12 +1,12 @@
 /* ═══════════ 분리수거 검사관 v2 — 3단계: 서사(튜토리얼) + 근무 씬 연출 ═══════════ */
 
-import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=22";
+import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=23";
 import {
   emptyBrain, addRule, removeRule, runChallenge, itemOf,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
-} from "./engine.js?v=22";
-import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=22";
-import { ART } from "./art.js?v=22";
+} from "./engine.js?v=23";
+import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=23";
+import { ART } from "./art.js?v=23";
 const art = (id) => ART[id] || ITEM_PLACEHOLDER;
 
 const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
@@ -18,6 +18,8 @@ function load(key, fallback) {
   catch { return fallback; }
 }
 const brain = Object.assign(emptyBrain(), load(BRAIN_KEY, {}));
+brain.seen ??= [];        // 도전에서 한 번이라도 등장한 물건
+brain.wrongReg ??= {};    // 낱개로 외운 물건으로 판정했다가 틀린 횟수 (잘못 가르침 표시)
 let history = load(HIST_KEY, []);
 let phase = load(PHASE_KEY, "orient"); // orient | c1 | c2 | free
 let humanBest = load(HB_KEY, null);
@@ -190,6 +192,10 @@ async function playChallenge() {
   // 정산으로
   $("work").classList.add("hidden");
   teachBudget = TEACH_PER_RUN;
+  result.perItem.forEach((p) => {
+    if (!brain.seen.includes(p.id)) brain.seen.push(p.id);
+    if (p.source === "reg" && !p.correct) brain.wrongReg[p.id] = (brain.wrongReg[p.id] || 0) + 1;
+  });
   history.push({
     n: history.length + 1, score: result.score, phase, today: todayCat,
     policy: brain.policy,
@@ -281,6 +287,8 @@ function runDiff(i) {
     added: cur.rulesSnap.filter((r) => !pk.has(ruleKey(r))),
     removed: prev.rulesSnap.filter((r) => !ck.has(ruleKey(r))),
     newReg: (cur.regIds?.length ?? 0) - (prev.regIds?.length ?? 0),
+    learned: (cur.regIds || []).filter((id) => !(prev.regIds || []).includes(id)),
+    forgot: (prev.regIds || []).filter((id) => !(cur.regIds || []).includes(id)),
     policyChanged: prev.policy !== cur.policy,
     first: false,
   };
@@ -319,7 +327,10 @@ function renderHistory() {
     else {
       if (d.added.length) parts.push(`<span class="diff-add">+ 규칙 ${d.added.map(ruleLabel).join(", ")}</span>`);
       if (d.removed.length) parts.push(`<span class="diff-del">− 규칙 ${d.removed.map(ruleLabel).join(", ")}</span>`);
-      if (d.newReg > 0) parts.push(`<span class="diff-add">+ 새로 외움 ${d.newReg}개</span>`);
+      const nm = (ids) => ids.filter((id) => ITEMS[id]).map((id) => itemOf(id).name).join(", ");
+      if (d.learned?.length) parts.push(`<span class="diff-add">+ 새로 외움 ${nm(d.learned)}</span>`);
+      else if (d.newReg > 0) parts.push(`<span class="diff-add">+ 새로 외움 ${d.newReg}개</span>`);
+      if (d.forgot?.length) parts.push(`<span class="diff-del">− 잊음 ${nm(d.forgot)}</span>`);
       if (!parts.length) parts.push("바꾼 것 없이 재도전");
     }
     const prevScore = histSel > 0 ? history[histSel - 1].score : null;
@@ -643,11 +654,16 @@ function attrChips(itemId) {
   return itemOf(itemId).feats.map((f) =>
     `<span class="chip">${FEATURES[f].icon} ${FEATURES[f].name}</span>`).join("");
 }
-function openInspect(itemId) {
+function openInspect(itemId, allowFix = false) {
   $("inspectName").textContent = itemOf(itemId).name;
   $("inspectCat").textContent = brain.reg[itemId]
     ? `수첩에 "${CATS[brain.reg[itemId]]}"로 적혀 있어요` : "아직 수첩에 없는 물건이에요";
   $("inspectAttrs").innerHTML = attrChips(itemId);
+  const w = brain.wrongReg[itemId];
+  $("inspectWarn").classList.toggle("hidden", !(w && brain.reg[itemId]));
+  if (w) $("inspectWarn").textContent = `⚠ 이 물건은 수첩대로 판정했는데 ${w}번 틀렸어요. 잘못 가르쳤을지도 몰라요!`;
+  $("inspectFix").classList.toggle("hidden", !(allowFix && brain.reg[itemId]));
+  $("inspectFix").onclick = () => { $("inspect").classList.add("hidden"); openTeach(itemId, "fix"); };
   $("inspect").classList.remove("hidden");
 }
 $("inspectClose").addEventListener("click", () => $("inspect").classList.add("hidden"));
@@ -667,15 +683,43 @@ $("teachInspect").addEventListener("click", () => $("teachAttrs").classList.togg
 document.querySelectorAll(".cat-btn").forEach((b) =>
   b.addEventListener("click", () => {
     if (!teaching) return;
-    brain.reg[teaching.itemId] = b.dataset.cat;
+    const id = teaching.itemId, cat = b.dataset.cat;
+    $("teach").classList.add("hidden");
+    if (teachContext === "swap") { teaching = null; openForget(id, cat); return; }
+    brain.reg[id] = cat;
+    delete brain.wrongReg[id];
     Sound.learn();
     save();
-    $("teach").classList.add("hidden");
-    if (teachContext === "orient") orientAfterTeach(teaching.itemId);
+    if (teachContext === "orient") orientAfterTeach(id);
+    else if (teachContext === "fix") renderItemsPane();
     else { teachBudget -= 1; if (lastResult) renderWrongList(); }
     teaching = null;
   }));
 $("teachCancel").addEventListener("click", () => { teaching = null; $("teach").classList.add("hidden"); });
+
+/* ── 바꿔 외우기: 외운 물건 하나를 잊고 새 물건을 외움 ── */
+function openForget(newId, cat) {
+  const known = Object.keys(brain.reg).filter((k) => ITEMS[k]);
+  const commit = (forgotId) => {
+    if (forgotId) { delete brain.reg[forgotId]; delete brain.wrongReg[forgotId]; }
+    brain.reg[newId] = cat;
+    delete brain.wrongReg[newId];
+    Sound.learn();
+    save();
+    $("forget").classList.add("hidden");
+    renderItemsPane();
+    aiAlert(forgotId
+      ? `${itemOf(forgotId).name}은(는) 잊었어요… 대신 ${itemOf(newId).name} = "${CATS[cat]}"로 외웠어요!`
+      : `${itemOf(newId).name} = "${CATS[cat]}"로 외웠어요!`);
+  };
+  if (!known.length) { commit(null); return; }
+  $("forgetNew").textContent = `${itemOf(newId).name} → ${CATS[cat]}`;
+  $("forgetList").innerHTML = known.map((k) =>
+    `<button class="forget-chip c-${brain.reg[k]}" data-fg="${k}">${brain.wrongReg[k] ? "⚠ " : ""}${itemOf(k).name} <small>${CATS[brain.reg[k]]}</small></button>`).join("");
+  document.querySelectorAll("[data-fg]").forEach((b) => b.addEventListener("click", () => commit(b.dataset.fg)));
+  $("forget").classList.remove("hidden");
+}
+$("forgetCancel").addEventListener("click", () => $("forget").classList.add("hidden"));
 
 /* ── 오리엔테이션 ── */
 let orientTaught = 0;
@@ -749,16 +793,27 @@ function renderItemsPane() {
   $("itemCols").innerHTML = Object.keys(CATS).map((cat) => {
     const chips = Object.keys(brain.reg)
       .filter((id) => brain.reg[id] === cat && ITEMS[id])
-      .map((id) => `<div class="ichip" data-insp="${id}">${itemOf(id).name}</div>`)
+      .map((id) => `<div class="ichip ${brain.wrongReg[id] ? "warn" : ""}" data-insp="${id}">${brain.wrongReg[id] ? "⚠ " : ""}${itemOf(id).name}</div>`)
       .join("") || `<div class="none">아직 없음</div>`;
     return `<div class="icol"><span class="icol-title c-${cat}">${CATS[cat]}</span>${chips}</div>`;
   }).join("");
   document.querySelectorAll("[data-insp]").forEach((c) =>
-    c.addEventListener("click", () => openInspect(c.dataset.insp)));
-  const unknown = Object.keys(ITEMS).filter((id) => !brain.reg[id]).length;
-  $("mysteryRow").innerHTML = unknown
-    ? Array.from({ length: unknown }, () => `<span class="mq">?</span>`).join("")
+    c.addEventListener("click", () => openInspect(c.dataset.insp, true)));
+  const seenUnknown = brain.seen.filter((id) => ITEMS[id] && !brain.reg[id]);
+  const unseen = Object.keys(ITEMS).filter((id) => !brain.reg[id] && !brain.seen.includes(id)).length;
+  const total = seenUnknown.length + unseen;
+  $("mysteryRow").innerHTML = total
+    ? seenUnknown.map((id) => `<button class="mq-seen" data-swap="${id}">❓ ${itemOf(id).name}</button>`).join("") +
+      Array.from({ length: unseen }, () => `<span class="mq">?</span>`).join("")
     : `<b>모든 물건을 다 외웠어요! 🎉</b>`;
+  $("mysteryHint").textContent = seenUnknown.length
+    ? "❓ 본 적 있는 물건을 누르면, 외운 것 하나를 잊고 대신 외울 수 있어요 (자리 바꾸기)"
+    : "도전에서 만난 물건이 여기에 이름으로 나타나요";
+  document.querySelectorAll("[data-swap]").forEach((b) =>
+    b.addEventListener("click", () => {
+      if (phase !== "free") { aiAlert("출근 훈련이 끝나면 바꿔 외울 수 있어요!"); return; }
+      openTeach(b.dataset.swap, "swap");
+    }));
 }
 
 let selFeats = [];
@@ -942,6 +997,7 @@ if (new URLSearchParams(location.search).get("reset")) {
   history = []; phase = "orient";
   Object.keys(brain.reg).forEach((k) => delete brain.reg[k]);
   brain.rules.length = 0; brain.policy = null;
+  brain.seen.length = 0; Object.keys(brain.wrongReg).forEach((k) => delete brain.wrongReg[k]);
   window.history.replaceState(null, "", location.pathname);
 }
 renderHome();
