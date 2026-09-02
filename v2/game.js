@@ -1,12 +1,12 @@
 /* ═══════════ 분리수거 검사관 v2 — 3단계: 서사(튜토리얼) + 근무 씬 연출 ═══════════ */
 
-import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=19";
+import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=20";
 import {
   emptyBrain, addRule, removeRule, runChallenge, itemOf,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
-} from "./engine.js?v=19";
-import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=19";
-import { ART } from "./art.js?v=19";
+} from "./engine.js?v=20";
+import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=20";
+import { ART } from "./art.js?v=20";
 const art = (id) => ART[id] || ITEM_PLACEHOLDER;
 
 const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
@@ -229,22 +229,40 @@ $("whoGo").addEventListener("click", () => {
   Sound.good();
 });
 
-// 도전이 끝날 때마다 조용히 자동 전송 (성공 확인 불가 — 수동 버튼·활동지가 백업)
+// 도전이 끝날 때마다 조용히 자동 전송 — 숨은 iframe에 진짜 폼 제출을 흘려보내는 방식
+// (fetch no-cors는 구글이 거부. 정적 사이트에서 구글폼 받는 고전 기법. 성공 여부는 확인 불가)
 function autoSubmit(score, runNo) {
   if (!FORM.id || !student) return;
   try {
-    const body = new URLSearchParams();
-    if (FORM.entries.grade) body.set(FORM.entries.grade, student.grade);
-    body.set(FORM.entries.cls, student.cls);
-    body.set(FORM.entries.num, student.num);
-    body.set(FORM.entries.run, runNo);
-    body.set(FORM.entries.score, score);
-    body.set(FORM.entries.rules, brain.rules.map((r) => r.feats.map((f) => FEATURES[f].name).join("+") + "→" + CATS[r.cat]).join(" / ") || "(규칙 없음)");
-    fetch(`https://docs.google.com/forms/d/e/${FORM.id}/formResponse`, {
-      method: "POST", mode: "no-cors",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: body.toString(),
-    });
+    let frame = document.getElementById("gfSink");
+    if (!frame) {
+      frame = document.createElement("iframe");
+      frame.id = "gfSink"; frame.name = "gfSink";
+      frame.style.cssText = "position:absolute;width:0;height:0;border:0;opacity:0;pointer-events:none";
+      document.body.appendChild(frame);
+    }
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = `https://docs.google.com/forms/d/e/${FORM.id}/formResponse`;
+    form.target = "gfSink";
+    form.style.display = "none";
+    const add = (name, value) => {
+      if (!name) return;
+      const inp = document.createElement("input");
+      inp.type = "hidden"; inp.name = name; inp.value = String(value);
+      form.appendChild(inp);
+    };
+    add(FORM.entries.grade, student.grade);
+    add(FORM.entries.cls, student.cls);
+    add(FORM.entries.num, student.num);
+    add(FORM.entries.run, runNo);
+    add(FORM.entries.score, score);
+    add(FORM.entries.rules, brain.rules.map((r) => r.feats.map((f) => FEATURES[f].name).join("+") + "→" + CATS[r.cat]).join(" / ") || "(규칙 없음)");
+    add("fvv", "1");
+    add("pageHistory", "0");
+    document.body.appendChild(form);
+    form.submit();
+    setTimeout(() => form.remove(), 3000);
   } catch (e) { /* 무음 실패 허용 */ }
 }
 
