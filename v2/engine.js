@@ -2,7 +2,7 @@
    우선순위: 물품 등록(정확 지식) > 특징 규칙(구체성 우선, 동점 불일치=혼란→방침) > 방침
    brain = { reg: {itemId: cat}, rules: [{feats:[...], cat}], policy: "pass"|"deny"|"guess" } */
 
-import { ITEMS, CATS, RULE_SLOTS } from "./data.js?v=14";
+import { ITEMS, CATS, RULE_SLOTS } from "./data.js?v=15";
 
 export const GUESS_CATS = ["paper", "can", "food", "plastic"];
 

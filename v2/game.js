@@ -1,12 +1,12 @@
 /* ═══════════ 분리수거 검사관 v2 — 3단계: 서사(튜토리얼) + 근무 씬 연출 ═══════════ */
 
-import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=14";
+import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=15";
 import {
   emptyBrain, addRule, removeRule, runChallenge, itemOf,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
-} from "./engine.js?v=14";
-import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=14";
-import { ART } from "./art.js?v=14";
+} from "./engine.js?v=15";
+import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=15";
+import { ART } from "./art.js?v=15";
 const art = (id) => ART[id] || ITEM_PLACEHOLDER;
 
 const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
@@ -212,7 +212,7 @@ async function playChallenge() {
 const FORM = {
   id: "1FAIpQLSdI34u9OR5ZajrhL8X45GlXP2SZTcPKlTvJ01jAwXCXbpm9_A",
   entries: {
-    cls: "entry.478214253", num: "entry.1171834626",
+    grade: "", cls: "entry.478214253", num: "entry.1171834626",
     run: "entry.983304353", score: "entry.1506927311", rules: "entry.900801293",
   },
 };
@@ -224,9 +224,9 @@ function askWho() {
   $("who").classList.remove("hidden");
 }
 $("whoGo").addEventListener("click", () => {
-  const cls = $("whoCls").value.trim(), num = $("whoNum").value.trim();
-  if (!cls || !num) { aiAlert("반과 번호를 적어주세요!"); return; }
-  student = { cls, num };
+  const grade = $("whoGrade").value.trim(), cls = $("whoCls").value.trim(), num = $("whoNum").value.trim();
+  if (!grade || !cls || !num) { aiAlert("학년·반·번호를 모두 적어주세요!"); return; }
+  student = { grade, cls, num };
   localStorage.setItem(STU_KEY, JSON.stringify(student));
   $("who").classList.add("hidden");
   Sound.good();
@@ -237,6 +237,7 @@ function autoSubmit(score, runNo) {
   if (!FORM.id || !student) return;
   try {
     const body = new URLSearchParams();
+    if (FORM.entries.grade) body.set(FORM.entries.grade, student.grade);
     body.set(FORM.entries.cls, student.cls);
     body.set(FORM.entries.num, student.num);
     body.set(FORM.entries.run, runNo);
@@ -334,7 +335,7 @@ function renderHistory() {
     $("formBtn").classList.remove("hidden");
     $("formBtn").onclick = () => {
       const q = new URLSearchParams({ usp: "pp_url" });
-      if (student) { q.set(FORM.entries.cls, student.cls); q.set(FORM.entries.num, student.num); }
+      if (student) { if (FORM.entries.grade) q.set(FORM.entries.grade, student.grade); q.set(FORM.entries.cls, student.cls); q.set(FORM.entries.num, student.num); }
       q.set(FORM.entries.run, history.length);
       q.set(FORM.entries.score, best);
       q.set(FORM.entries.rules, (bh.rulesSnap || []).map(ruleLabel).join(" / "));
