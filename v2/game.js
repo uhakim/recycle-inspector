@@ -1,12 +1,12 @@
 /* ═══════════ 분리수거 검사관 v2 — 3단계: 서사(튜토리얼) + 근무 씬 연출 ═══════════ */
 
-import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=13";
+import { CATS, FEATURES, ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "./data.js?v=14";
 import {
   emptyBrain, addRule, removeRule, runChallenge, itemOf,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags,
-} from "./engine.js?v=13";
-import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=13";
-import { ART } from "./art.js?v=13";
+} from "./engine.js?v=14";
+import { Sound, PEOPLE, AI_SVG, ITEM_PLACEHOLDER } from "./assets.js?v=14";
+import { ART } from "./art.js?v=14";
 const art = (id) => ART[id] || ITEM_PLACEHOLDER;
 
 const BRAIN_KEY = "rv2-brain", HIST_KEY = "rv2-hist", PHASE_KEY = "rv2-phase", HB_KEY = "rv2-humanBest";
@@ -209,7 +209,13 @@ async function playChallenge() {
 
 /* ── 학생 정보 + 구글폼 자동 전송 ── */
 // 유하님이 "미리 채워진 링크"를 주면 아래 id와 entries만 채우면 활성화됨
-const FORM = { id: "", entries: { cls: "", num: "", run: "", score: "", rules: "" } };
+const FORM = {
+  id: "1FAIpQLSdI34u9OR5ZajrhL8X45GlXP2SZTcPKlTvJ01jAwXCXbpm9_A",
+  entries: {
+    cls: "entry.478214253", num: "entry.1171834626",
+    run: "entry.983304353", score: "entry.1506927311", rules: "entry.900801293",
+  },
+};
 const STU_KEY = "rv2-student";
 let student = load(STU_KEY, null);
 
