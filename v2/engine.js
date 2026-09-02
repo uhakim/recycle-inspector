@@ -2,7 +2,7 @@
    우선순위: 물품 등록(정확 지식) > 특징 규칙(구체성 우선, 동점 불일치=혼란→방침) > 방침
    brain = { reg: {itemId: cat}, rules: [{feats:[...], cat}], policy: "pass"|"deny"|"guess" } */
 
-import { ITEMS, CATS, RULE_SLOTS } from "./data.js?v=17";
+import { ITEMS, CATS, RULE_SLOTS } from "./data.js?v=18";
 
 export const GUESS_CATS = ["paper", "can", "food", "plastic"];
 
@@ -84,8 +84,8 @@ export function runChallenge(bags, brain, todayCat, rng = Math.random) {
     for (const g of guesses) {
       g.bagIndex = bagIndex;
       const truth = itemOf(g.id).cat;
-      // 모르는 물건은 봉투 판정이 그 물건에 대해 옳았는지로 채점 (통과=오늘 것 취급, 반려=아님 취급)
-      const correct = g.cat === "unknown" ? aiPass === (truth === todayCat) : g.cat === truth;
+      // 모르는 물건은 틀린 것 — 운 좋게 통과됐어도 점수 없음 (점수 = 확실히 알고 맞힌 양)
+      const correct = g.cat === "unknown" ? false : g.cat === truth;
       perItem.push({ ...g, truth, correct });
       if (g.source === "rule") ruleStats[g.ruleIndex][correct ? "hits" : "misses"] += 1;
       if (g.source === "reg") (correct ? regHits++ : regMisses++);

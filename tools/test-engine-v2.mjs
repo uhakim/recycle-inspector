@@ -1,9 +1,9 @@
 /* 판정 엔진 v2 단위 테스트 + 설계 곡선 시뮬 — node tools/test-engine-v2.mjs */
-import { ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "../v2/data.js?v=17";
+import { ITEMS, RULE_SLOTS, TEACH_PER_RUN } from "../v2/data.js?v=18";
 import {
   emptyBrain, addRule, classifyItem, runChallenge,
   poolTutorial1, makeTutorial2Bags, poolFree, makeBags, itemOf,
-} from "../v2/engine.js?v=17";
+} from "../v2/engine.js?v=18";
 
 let fails = 0;
 const ok = (cond, msg) => { console.log((cond ? "PASS" : "FAIL") + "  " + msg); if (!cond) fails++; };
@@ -49,7 +49,7 @@ const seeded = (seed) => () => {
 {
   const b = emptyBrain();
   ok(classifyItem("basin", b).cat === "unknown", "모르는 물건 → unknown (분류를 지어내지 않음)");
-  const { bagVerdict } = await import("../v2/engine.js?v=17");
+  const { bagVerdict } = await import("../v2/engine.js?v=18");
   ok(bagVerdict([{ cat: "unknown" }], "can").pass === true, "모르는 봉투 → 무조건 통과");
   ok(bagVerdict([{ cat: "can" }, { cat: "unknown" }], "can").pass === true, "아는 것 다 맞고 + 모름 → 통과");
   ok(bagVerdict([{ cat: "paper" }, { cat: "unknown" }], "can").pass === false, "아는 것이 오늘 것 아니면 확실 반려");
@@ -88,7 +88,7 @@ const seeded = (seed) => () => {
     sum += runChallenge(makeTutorial2Bags(b, curated, 5, "can", r), b, "can", r).itemAcc;
   }
   const c2avg = sum / runs;
-  ok(c2avg > 0.35 && c2avg < 0.75, `도전 2 = 좌절 구간 40~75% (평균 ${Math.round(c2avg * 100)}%)`);
+  ok(c2avg > 0.15 && c2avg < 0.6, `도전 2 = 좌절 구간 15~60% (평균 ${Math.round(c2avg * 100)}%) — 모름=오답 채점`);
 
   // 특징 개방 후: 골든 규칙 3개 등록 → 무한 풀에서 성능 상승
   addRule(b, ["shiny", "cyl"], "can");
@@ -113,7 +113,7 @@ const seeded = (seed) => () => {
   const freeAcc2 = sum4 / runs;
   console.log(`  튜닝 곡선: 골든 3규칙 ${Math.round(freeAcc1 * 100)}% → 좋은 규칙 2개 추가 ${Math.round(freeAcc2 * 100)}%`);
   ok(freeAcc2 > freeAcc1, "튜닝할수록 성능 상승");
-  ok(freeAcc2 > 0.8, `충실히 튜닝하면 80%+ 도달 (실제 ${Math.round(freeAcc2 * 100)}%)`);
+  ok(freeAcc2 > 0.6, `규칙 5개로 60%+ 도달 (실제 ${Math.round(freeAcc2 * 100)}%) — 나머지는 낱개 등록으로 채움`);
 
   // 과잉 개별화 방해: 미끼 좁은 규칙 추가 → 성능 하락
   const b3 = JSON.parse(JSON.stringify(b));
